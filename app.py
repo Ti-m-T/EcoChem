@@ -1,5 +1,5 @@
 import streamlit as st
-from PPChem_Project import calcul_coef_stoechio
+from Atom_economy_function import calcul_coef_stoechio
 
 st.title("Reaction builder")
 
