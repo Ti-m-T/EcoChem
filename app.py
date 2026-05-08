@@ -1,5 +1,8 @@
 import streamlit as st
+<<<<<<< HEAD
 
+=======
+>>>>>>> 209e6781c4d592477e60f1ca0a6df3ca6def18d9
 st.title("Reaction builder")
 
 num_r = st.number_input("Number of reactants", min_value=1, max_value=10, value=2)
@@ -43,4 +46,6 @@ if st.button("Compute"):
 
     st.write(result)
 
+
 # On importe la fonction de calcul des coefficients stoechiométriques et on l'applique au dictionnaire de réaction créé à partir des inputs, affichant les résultats dans l'application Streamlit.
+
