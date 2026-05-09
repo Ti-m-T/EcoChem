@@ -116,8 +116,9 @@ def calc_DOF_a_un(coef_dict: dict[str, dict[str, int | str]]) -> dict[str,dict[s
         
         exp_str = rech_var.sub("1", exp_str)
 
-        # safely evaluate arithmetic expression
         return int(sympify(exp_str))
+
+        # Retourne les coef. stoi. sans modifications
 
     equation_sans_DOF : dict[str,dict[str,int]] = {"reactants": {}, "products": {}}
 
