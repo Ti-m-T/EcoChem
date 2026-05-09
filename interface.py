@@ -1,11 +1,18 @@
 import streamlit as st
+from rdkit import Chem
+from rdkit.Chem import AllChem, Draw
+import pubchempy as pcp
+
 st.set_page_config(page_title="Green Chemistry Calculator", page_icon=":leaves:")
 st.title("🌿 Green Chemistry Calculator")
 st.header("Welcome to Green Chemistry Calculator a powerful tool that can calculate the greenness of your reaction!")
 st.divider()
+#Settings of the Home page 
 if "page_active" not in st.session_state: st.session_state.page_active="Home"
 
-def go_to(page_name):
+
+
+def go_to(page_name):                            #Definition of a function to create buttons to redirect users to other pages
     st.session_state.page_active= page_name
 
 st.sidebar.title("Menu")
@@ -23,9 +30,9 @@ if st.sidebar.button("⚛️ Molecular visulization"):
 
 if st.session_state.page_active == 'Molecular visualization':
         st.title("Draw Molecule")
-        st.write("Draw your molecule to get started.")
+        st.write("Draw the reactants, solvent/catalysts and products of your reaction to get the SMILES!")
 
-    # 1. Initializaion session state
+    # Initializaion session state
         if 'reag_list' not in st.session_state: st.session_state.reag_list = []
         if 'solv_list' not in st.session_state: st.session_state.solv_list = []
         if 'prod_list' not in st.session_state: st.session_state.prod_list = []
@@ -80,8 +87,9 @@ if st.session_state.page_active == 'Molecular visualization':
         c5, c6 = st.columns(2)
         c5.button("➕ Add Product", on_click=add_prod, key="ap")
         c6.button("➖ Remove Product", on_click=remove_prod, key="rp")
-    
-        tabs_p = st.tabs([f"Product {i+1}" for i in range(st.session_state.number_products)])
+
+        tabs_names=["Main Product"] + [f"Product {i+1}" for i in range(1,st.session_state.number_products)]
+        tabs_p = st.tabs(tabs_names)
         current_prod = []
         for i, tab in enumerate(tabs_p):
             with tab:
@@ -101,14 +109,45 @@ if st.session_state.page_active == 'Molecular visualization':
         if st.button("🚀 Generate Reaction SMILES"):
             if reag_str and prod_str:
                 st.success("### Reaction SMILES Created!")
-                st.code(full_reaction)
-                st.info(f"**Equation:** {reag_str} ⎯⎯⎯({solv_str if solv_str else 'no catalyst'})⎯⎯→ {prod_str}")
-                st.session_state.final_smiles = full_reaction
-                st.code(full_reaction, language="text")
-                tutti_gli_smiles = st.session_state.reag_list + st.session_state.solv_list + st.session_state.prod_list
-                lista_stringa = ", ".join(tutti_gli_smiles)
-        
-                st.write(f"**SMILES List:** {lista_stringa}")
+                
+                try:
+                    reagents = [Chem.MolFromSmiles(s) for s in st.session_state.reag_list if s]
+                    solvents = [Chem.MolFromSmiles(s) for s in st.session_state.solv_list if s]
+                    products = [Chem.MolFromSmiles(s) for s in st.session_state.prod_list if s]
+                    
+                    if reagents and products:
+                        rxn = AllChem.ChemicalReaction()
+                        for m in reagents:
+                            if m:
+                                AllChem.Compute2DCoords(m)
+                                rxn.AddReactantTemplate(m)
+                        for m in solvents:
+                            if m:
+                                AllChem.Compute2DCoords(m)
+                                rxn.AddAgentTemplate(m)
+                        for m in products:
+                            if m:
+                                AllChem.Compute2DCoords(m)
+                                rxn.AddProductTemplate(m)
 
-            else:
-                st.warning("⚠️ Please draw at least one reactant and one product.")
+                        img = Draw.ReactionToImage(
+                    rxn, 
+                    subImgSize=(400, 400),
+                    useSVG=False)
+
+                    st.image(img, use_container_width=True)
+                    
+                    st.subheader("Complete Reaction Drawing!")
+                    
+                except Exception as e:
+                    st.error(f"Could not render reaction image{e}")
+
+            st.info(f"**Equation:** {reag_str} ⎯⎯⎯({solv_str if solv_str else 'no catalyst'})⎯⎯→ {prod_str}")
+            st.session_state.final_smiles = full_reaction
+            all_smiles = st.session_state.reag_list + st.session_state.solv_list + st.session_state.prod_list
+            string_list = ", ".join(all_smiles)
+        
+            st.write(f"**SMILES List:** {string_list}")
+
+        else:
+            st.warning("⚠️ Please draw at least one reactant and one product.")
