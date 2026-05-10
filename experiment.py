@@ -1,6 +1,21 @@
 from dataclasses import dataclass, field
+import re
 from rdkit import Chem
-from rdkit.Chem import rdMolDescriptors
+import streamlit as st
+from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors
+from stmol import showmol
+import py3Dmol
+from pathlib import Path
+import pandas as pd
+import os
+from streamlit_ketcher import st_ketcher
+from rdkit.Chem import rdFingerprintGenerator
+import numpy as np
+import mols2grid
+import streamlit.components.v1 as components
+import plotly.figure_factory as ff
+from typing import Tuple, List
+import pubchempy as pcp
 from chempy.chemistry import balance_stoichiometry
 from thermo import chemical as density_finder
 
@@ -16,11 +31,8 @@ class Chemical: # Class grouping all chemicals
             self.logp = rdMolDescriptors.SlogP_VSA_(self.mol) # Finds the hydrophobicity of the molecule
             self.mol_f = rdMolDescriptors.CalcMolFormula(self.mol) # Finds the molecular formula using the smiles
             self.coeff : int = 1
-
-
-            mol_H = Chem.AddHs(self.mol)
-
-            self.nb_atom = mol_H.GetNumAtoms()
+            mol_H = Chem.AddHs(self.mol) # Adds the lost hydrogen to the smiles
+            self.nb_atom = mol_H.GetNumAtoms() # Finds the number of atoms in the molecule including hydrogens
         else:
             self.mw = 0.0
             self.smiles = "Invalid"
@@ -81,5 +93,5 @@ class Reaction:
 #for p in react.products:
 #    print(p.coeff)
 
-mol = Chemical("CC=O")
-print(mol.nb_atom)
+#mol = Chemical("CC=O")
+#print(mol.nb_atom)
