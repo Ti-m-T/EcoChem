@@ -4,180 +4,121 @@ from rdkit.Chem import Descriptors
 from rdkit import Chem
 from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 from sympy import sympify
+from experiment import Reaction
+from experiment import Chemical
+from experiment import Extras
+from experiment import LiquidChemical
+from experiment import Solvent
+from experiment import Extractant
 
 dictionary_input_smiles: dict[str, list[str]] = {
     "reactants": ["CCO", "O=O", "CC=O"],
     "products": ["CC(=O)O", "O", "C=O"],
 }
 
+###################################################################################################################
 
-def split_input(
-    dictionary_input_smiles: dict[str, list[str]],
-) -> tuple[list[str], list[str]]:
-    reactants: list[str] = dictionary_input_smiles.get("reactants", [])
-    products: list[str] = dictionary_input_smiles.get("products", [])
-    return (reactants, products)
+def react_builder(dictionary_input_smiles : dict[str,list[str]]) :
+    react_list : str = []
+    prod_list : str = []
 
+    for react in dictionary_input_smiles["reactants"] :
+        react = Chemical(smiles = react, mass = 1)
+        react_list.append(react)
 
-# Split en deux classes le dictionnaire d'input
+    for prod in dictionary_input_smiles["products"] : 
+        prod = Chemical(smiles = prod, mass = 1)
+        prod_list.append(prod)
 
+    react = Reaction(react_list , prod_list)
+    return react
 
-def smiles_to_brute(
-    dictionary_input_smiles: dict[str, list[str]],
-) -> dict[str, list[str]]:
+###################################################################################################################
 
-    dictionary_input_brute: dict[str, list[str]] = {}
+def calcul_eco_atom_react_M(react) :
 
-    for key, liste_smiles in dictionary_input_smiles.items():
-        dictionary_input_brute[key] = []
+    # react.stoich_of_reaction()
 
-        for smiles in liste_smiles:
-            molecule = Chem.MolFromSmiles(smiles)
-            formule_brute = CalcMolFormula(molecule)
-            dictionary_input_brute[key].append(formule_brute)
-
-    return dictionary_input_brute
-
-
-# print(smiles_to_brute(dictionary_input_smiles))
-# Fonction qui passe de smiles a formule brute et retourne un dictionnarie de listes de formules brutes
-
-
-def calcul_coef_stoechio(
-    dictionary_input_smiles: dict[str, list[str]],
-) -> dict[str,dict[str, int | str]]:
-    dict_coef_stoechio: dict[str,dict[str, int | str]] = {"reactants": {}, "products": {}}
-    dict_input_brute = smiles_to_brute(dictionary_input_smiles)
-    reactant, product = split_input(dict_input_brute)
-    coef_stoi_reac, coef_stoi_prod = balance_stoichiometry(reactant, product)
-
-    # Calcul des coefficients stoechiométriques à partir des formules brutes des réactifs et des produits
-
-    liste_smiles_tot: list[str] = []
-    for key in dictionary_input_smiles["reactants"]:
-        liste_smiles_tot.append(key)
-
-    for key in dictionary_input_smiles["products"]:
-        liste_smiles_tot.append(key)
-
-    print(liste_smiles_tot)
-    # Creation d'une liste des smiles des réactifs et des produits
-
+    eco_atom_reactants_M: float = 0.0
     
+    for reactant in react.reactants :
+        eco_atom_reactants_M += (reactant.coeff) * reactant.mw
 
-    liste_brute_tot: list[str] = []
-    for key in coef_stoi_reac.keys():
-        liste_brute_tot.append(key)
+        # print(reactant.coeff ,reactant.mw)
 
-    for key in coef_stoi_prod.keys():
-        liste_brute_tot.append(key)
+    return ( eco_atom_reactants_M )
 
-    print(coef_stoi_prod, coef_stoi_reac)
+# print(calcul_eco_atom_react_M(react_builder(dictionary_input_smiles)))
 
-    print(liste_brute_tot)
+###################################################################################################################
 
-    # Creation d'une liste de formules brutes associées
+def calcul_eco_atom_react_nb_atom(react) :
 
-    for key, coef_stoi in coef_stoi_reac.items():
-        Loc = liste_brute_tot.index(key)
-        smiles_associé_au_brute = liste_smiles_tot[Loc]
-        dict_coef_stoechio["reactants"][smiles_associé_au_brute] = coef_stoi
+    # react.stoich_of_reaction() 
 
-    for key, coef_stoi in coef_stoi_prod.items():
-        Loc = liste_brute_tot.index(key)
-        smiles_associé_au_brute = liste_smiles_tot[Loc]
-        dict_coef_stoechio["products"][smiles_associé_au_brute] = coef_stoi
+    nb_atom_react : int = 0
 
-    
+    for reactant in react.reactants :
+        nb_atom_react += (reactant.coeff) * reactant.nb_atom
 
-    # On relie la formule brute au smile par emplacement dans la liste
+        # print(reactant.coeff ,reactant.nb_atom)
 
-    return dict_coef_stoechio
-# print(calcul_coef_stoechio(dictionary_input_smiles))
-# Fonction qui calcule les coefficients stoechiométriques d'une réaction chimique donnée sous forme de dictionnaire de listes de réactifs et de produits, retourant les coefficients stochiométriques sous forme de dictionaires.
-####
+    return (nb_atom_react)
 
+# print(calcul_eco_atom_react_nb_atom(react_builder(dictionary_input_smiles)))
 
-def calc_DOF_a_un(coef_dict: dict[str, dict[str, int | str]]) -> dict[str,dict[str,int]]:
+###################################################################################################################
 
-    rech_var = re.compile(r"x\d+")
-    # Recherche de variables de type x1,x2,....,xn
+def calc_DOF_a_un(exp: float | str ) -> float:
+   
+    rech_var = re.compile(r"\bx\d+\b")
 
     def evaluer_exp(exp):
         exp_str = str(exp)
 
-        if not rech_var.search(exp_str):
-            try:
-                return int(exp_str)
-            except:
-                return float(exp_str)
-        
-        # Cas ou il n'y pas de degré de libertée
-        
         exp_str = rech_var.sub("1", exp_str)
 
-        return int(sympify(exp_str))
+        # DOF a 1
 
-        # Retourne les coef. stoi. sans modifications
+        try:
+            return float(sympify(exp_str))
+        except Exception : 
+            
+            try:
+                return float(exp_str)
+            except Exception as e:
+                raise ValueError(f"Cannot evaluate expression: {exp}") from e
 
-    equation_sans_DOF : dict[str,dict[str,int]] = {"reactants": {}, "products": {}}
+        # Evalue l'expression et regarde s'il a un probleme
 
-    for side in ["reactants", "products"]:
-        for species, coef in coef_dict[side].items():
-            equation_sans_DOF[side][species] = evaluer_exp(coef)
+    equation_sans_DOF = evaluer_exp(exp)
+
     return equation_sans_DOF
 
-# print(calc_DOF_a_un(calcul_coef_stoechio(dictionary_input_smiles)))
-# Fonction qui detecte les DOF dans la resolution des coef. stoic. et, s'il en existe, les égalise a 1
 
-def calculate_molecular_weight(
-    dictionary_input_smiles: dict[str, list[str]],
-) -> dict[str, dict[str, float]]:
-    mol_weights_dict: dict[str, dict[str, float]] = {"reactants": {}, "products": {}}
-    for key in ["reactants", "products"]:
-        for individual_smiles in dictionary_input_smiles.get(key, []):
-            molecule = Chem.MolFromSmiles(individual_smiles)
-            mol_weight = Descriptors.MolWt(molecule)
-            mol_weights_dict[key][individual_smiles] = mol_weight
-    return mol_weights_dict
+###################################################################################################################
+       
+def calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles: dict[str, list[str]],) -> float:
 
-# print(calculate_molecular_weight(dictionary_input_smiles))
-# Fonction qui calcule le poids moléculaire de chaque réactif et produit d'une réaction chimique apartir d'un dictionnaire contenant les listes de SMILES des réactifs et des produits, retournant un dictionnaire contenant les poids moléculaires correspondants.
+    react = react_builder(dictionary_input_smiles)
 
+    react.stoich_of_reaction()
 
-def calcul_eco_atom_reactants_M(dict_coef_stoic_reactants: dict[str, int],mol_weight_reactants : dict[str,float]) -> float:
-    # print(dict_coef_stoic_reactants)
-    # print(mol_weight_reactants)
-    eco_atom_reactants_M: float = 0.0
-    for key_reac, coef in dict_coef_stoic_reactants.items():
-        eco_atom_reactants_M += coef * mol_weight_reactants.get(key_reac, ())
-    return eco_atom_reactants_M
+    eco_atom_reactants_M = calcul_eco_atom_react_M(react)
 
-# print(calcul_eco_atom_reactants_M(dictionary_input_smiles))
-# Fonction qui calcule la partie des réactif pour l'economie d'atome en fonciton de la masse molaire
+    eco_atom_mp = (react.products[0].coeff) * react.products[0].mw
+    
+    eco_atom_M = calc_DOF_a_un((eco_atom_mp * 100)/ eco_atom_reactants_M)
 
-def calculate_eco_atm_M(
-    dictionary_input_smiles: dict[str, list[str]],
-) -> float:
-    dict_coef_stoic : dict[str,dict[str,int | str]] = calcul_coef_stoechio(dictionary_input_smiles)
-    dict_coef_stoic_sans_DOF = calc_DOF_a_un(dict_coef_stoic)
-    dict_coef_stoic_sans_DOF_reac: dict[str,int] = dict_coef_stoic_sans_DOF["reactants"] 
-    mol_weight_dict : dict[str,dict[str,float]] = calculate_molecular_weight(dictionary_input_smiles)
-    mol_weight_reactants : dict[str,float] = mol_weight_dict["reactants"] 
-    eco_atom_reactants_M : float = calcul_eco_atom_reactants_M(dict_coef_stoic_sans_DOF_reac,mol_weight_reactants)
+    nb_atom_reactants = calcul_eco_atom_react_nb_atom(react)
 
-    prod_list: list[str] = dictionary_input_smiles["products"]
-    main_prod_smiles : str = prod_list[0]
-    main_prod_molecule: str = Chem.MolFromSmiles(main_prod_smiles)
-    main_prod_M : float = Descriptors.MolWt(main_prod_molecule)
-    dict_coef_stoic_sans_DOF_prod: dict[str,int] = dict_coef_stoic_sans_DOF["products"]
-    main_prod_coef_sans_DOF : int = dict_coef_stoic_sans_DOF_prod[main_prod_smiles]
-    eco_atom_main_prod_M : float = main_prod_M * main_prod_coef_sans_DOF
-    print(main_prod_coef_sans_DOF , main_prod_M)
-    eco_atom_M : float = (eco_atom_main_prod_M*100)/eco_atom_reactants_M
-    return eco_atom_M
+    nb_atom_mp = (react.products[0].coeff) * react.products[0].nb_atom
 
-print(calculate_eco_atm_M(dictionary_input_smiles))
+    nb_atom = calc_DOF_a_un((nb_atom_mp * 100)/ nb_atom_reactants)
+    
+    return (eco_atom_M , nb_atom)
 
-# test:list[str]= ["ea", "eb", "ec", "ed", "ee"]
-# print(test.index("ec"))
+print(calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles))
+
+###################################################################################################################
+
