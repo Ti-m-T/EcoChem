@@ -37,8 +37,6 @@ def react_builder(dictionary_input_smiles : dict[str,list[str]]) :
 
 def calcul_eco_atom_react_M(react) :
 
-    # react.stoich_of_reaction()
-
     eco_atom_reactants_M: float = 0.0
     
     for reactant in react.reactants :
@@ -48,13 +46,9 @@ def calcul_eco_atom_react_M(react) :
 
     return ( eco_atom_reactants_M )
 
-# print(calcul_eco_atom_react_M(react_builder(dictionary_input_smiles)))
-
 ###################################################################################################################
 
-def calcul_eco_atom_react_nb_atom(react) :
-
-    # react.stoich_of_reaction() 
+def calcul_eco_atom_react_nb_atom(react) : 
 
     nb_atom_react : int = 0
 
@@ -64,8 +58,6 @@ def calcul_eco_atom_react_nb_atom(react) :
         # print(reactant.coeff ,reactant.nb_atom)
 
     return (nb_atom_react)
-
-# print(calcul_eco_atom_react_nb_atom(react_builder(dictionary_input_smiles)))
 
 ###################################################################################################################
 
@@ -95,7 +87,6 @@ def calc_DOF_a_un(exp: float | str ) -> float:
 
     return equation_sans_DOF
 
-
 ###################################################################################################################
        
 def calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles: dict[str, list[str]],) -> float:
@@ -118,7 +109,7 @@ def calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles: dict[str, list[str]]
     
     return (eco_atom_M , nb_atom)
 
-print(calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles))
+# print(calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles))
 
 ###################################################################################################################
 
