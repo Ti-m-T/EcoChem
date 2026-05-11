@@ -1,12 +1,32 @@
 import streamlit as st
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
+import os 
+from PIL import Image
 
 
 st.set_page_config(page_title="Green Chemistry Calculator", page_icon=":leaves:")
+st.image(r"C:\Users\cvitt\Green_chem_project\PPC.jpg.jpg")
 st.title("🌿 Green Chemistry Calculator")
-st.header( "Welcome to Green Chemistry Calculator a powerful tool that can calculate the greenness of your reaction!")
+st.header("Welcome to Green Chemistry Calculator a powerful tool that can calculate the greenness of your reaction!")
 st.divider()
+st.write("""
+With **Green Chemistry Calculator**, you can define how "green" your reaction is by calculating:
+* **PMI** (Process Mass Intensity)
+* **E-factor**
+* **Atom Economy**, and more!
+
+---
+
+### 💡 Features:
+
+* **Stoichiometry**: Don't know how to equilibrate your reaction? No problem! We will do it for you. Just head over to the **Stoichiometry** section.
+* **Molecular Visualization**: If you want to visualize the reaction or you only have the molecular structures, go to the **Molecular Visualization** page.
+
+Have fun using **Green Chemistry Calculator**! 🚀
+""")
+
+
 #Settings of the Home page 
 if "page_active" not in st.session_state: st.session_state.page_active="Home"
 if "number_reagents" not in st.session_state: st.session_state.number_reagents = 1
@@ -182,7 +202,7 @@ if st.session_state.page_active == "Molecular visualization":
 
                 img = Draw.ReactionToImage(rxn, subImgSize=(400, 400),useSVG=False)
 
-                st.image(img, use_container_width=True)
+                st.image(img, width="stretch")
                     
                 st.subheader("Complete Reaction Drawing!")
                     
@@ -198,5 +218,18 @@ if st.session_state.page_active == "Molecular visualization":
 
         else:
             st.warning("⚠️ Please draw at least one reactant and one product.")
+
+all_smiles_dict = {"Reagent":[], "Solvent":[], "Product":[]}
+if "reag_list" in st.session_state:
+    all_smiles_dict["Reagent"] = [s for s in st.session_state.reag_list if s]
+if "solv_list" in st.session_state.solv_list:
+    all_smiles_dict["Solvent"] = [s for s in st.session_state.solv_list if s]
+        
+if "prod_list" in st.session_state:
+    all_smiles_dict["Product"] = [s for s in st.session_state.prod_list if s]
+print(all_smiles_dict)
+
+
+
 
 

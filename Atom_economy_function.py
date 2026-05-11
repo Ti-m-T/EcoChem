@@ -109,7 +109,7 @@ def calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles: dict[str, list[str]]
     
     return (eco_atom_M , nb_atom)
 
-# print(calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles))
+#print(calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles))
 
 ###################################################################################################################
 
