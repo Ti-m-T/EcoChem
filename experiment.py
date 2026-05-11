@@ -31,6 +31,7 @@ class Chemical: # Class grouping all chemicals
             self.logp=rdMolDescriptors.SlogP_VSA_(self.mol) # Finds the hydrophobicity of the molecule
             self.mol_f=rdMolDescriptors.CalcMolFormula(self.mol) # Finds the molecular formula using the smiles
             self.coeff: int=1
+            self.nb_atom = Chem.AddHs(self.mol).GetNumAtoms() # Finds the number of atoms in the molecule including hydrogens
         else:
             self.mw=0.0
             self.smiles="Invalid"
@@ -78,14 +79,39 @@ class Reaction:
             reactant.coeff=reactants_coeff.get(reactant.mol_f,1)
         for product in self.products:
             product.coeff=products_coeff.get(product.mol_f,1)
+    
+    def calcul_eco_atom_reactants_M(self) :
+        #if all(isinstance(reactant.mw,(float,int)) for reactant in reactants):
+        return sum(reactant.coeff*reactant.mw for reactant in self.reactants)
+      
+    
+    def calcul_eco_atom_products_M(self) :
+        #if all(isinstance(product.mw,(float,int)) for product in products):
+        return sum(product.coeff*product.mw for product in self.products)
+    
+    def calcul_eco_atom_react_nb_atom(self):
+        #if all(isinstance(reactant.coeff,(float,int)) for reactant in reactants):
+        return sum(reactant.coeff*reactant.nb_atom for reactant in self.reactants)
+       
+
+    def calcul_eco_atom_product_nb_atom(self):
+       # if all(isinstance(product.coeff,(float,int)) for product in products):
+        return sum(product.coeff*product.nb_atom for product in self.products)
         
-r1=Chemical(smiles="C",mass=1)
+
+        
+'''r1=Chemical(smiles="C",mass=1)
 r2=Chemical(smiles="O=O",mass=1)
 p1=Chemical(smiles="C(=O)=O",mass=1)
 p2=Chemical(smiles="O",mass=1)
-react=Reaction([r1,r2],[p1,p2])
-react.stoich_of_reaction()
-for r in react.reactants:
-    print(r.coeff)
-for p in react.products:
-    print(p.coeff)
+react=Reaction([r1,r2],[p1,p2])'''
+reactants=[Chemical(smiles="C",mass=1),Chemical(smiles="O=O",mass=1)]
+products=[Chemical(smiles="O",mass=1),Chemical(smiles="C(=O)=O",mass=1)]
+reacto=Reaction(reactants,products)
+reacto.stoich_of_reaction()
+
+for r in reacto.reactants:
+    print(r.mol_f,r.coeff)
+for p in reacto.products:
+    print(p.mol_f,p.coeff)
+print(reacto.calcul_eco_atom_react_nb_atom())
