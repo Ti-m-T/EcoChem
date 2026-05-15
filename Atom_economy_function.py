@@ -177,13 +177,7 @@ def calculate_eco_atm_M(
     eco_atom_M : float = (eco_atom_main_prod_M*100)/eco_atom_reactants_M
     return eco_atom_M
 
-<<<<<<< HEAD
-#print(calculate_eco_atm_M_et_nb_atom(dictionary_input_smiles))
-
-###################################################################################################################
-=======
 print(calculate_eco_atm_M(dictionary_input_smiles))
->>>>>>> 95f25dc12efabfb08a235c7549b2b8b61c65b668
 
 # test:list[str]= ["ea", "eb", "ec", "ed", "ee"]
 # print(test.index("ec"))
