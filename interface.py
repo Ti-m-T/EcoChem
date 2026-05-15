@@ -3,6 +3,9 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 import os 
 from PIL import Image
+from Atom_economy_function import calcul_coef_stoechio
+from rdkit.Chem import rdMolDescriptors
+import re
 
 
 st.set_page_config(page_title="Green Chemistry Calculator", page_icon=":leaves:")
@@ -41,6 +44,17 @@ if "prod_list" not in st.session_state: st.session_state.prod_list = []
 def go_to(page_name):   #Definition of a function to create buttons to redirect users to other pages
     st.session_state.page_active = page_name
 
+def get_formula(smiles):
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        if mol:
+            formula = Chem.rdMolDescriptors.CalcMolFormula(mol)
+            latex_formula = re.sub(r'(\d+)', r'_{\1}', formula)
+            return latex_formula
+        return smiles
+    except:
+        return smiles
+
 
 st.sidebar.title("Menu")
 
@@ -50,8 +64,35 @@ if st.sidebar.button("🏠 Home"):
 if st.sidebar.button("🧪 Stoichiometry"):
     go_to("Stoichiometry")
     st.title("Stoichiometry")
-    st.write(
-        "Write the chemical formula of your reactants, products and solvent to get the correct stoichiometry of the reaction!")
+    st.write("Write the chemical formula of your reactants, products and solvent to get the correct stoichiometry of the reaction!")
+
+input_data = {"reactants": st.session_state.get("reag_list", []), "products":st.session_state.get("prod_list", [])}
+
+if st.button("⚖️ Calculate Coefficients"):
+    if input_data["reactants"] and input_data["products"]:
+        try:
+            results = calcul_coef_stoechio(input_data)
+            st.success("Reaction Balanced!")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("Reactants")
+                for smiles, coef in results["reactants"].items():
+                    formula = get_formula(smiles)
+                    st.latex(rf"{coef} \text{{ }} {formula}")
+            with col2:
+                st.subheader("Products")
+                for smiles, coef in results["products"].items():
+                    formula = get_formula(smiles)
+                    st.latex(rf"{coef} \text{{ }} {formula}")
+            st.session_state.stoich_results = results
+        except Exception as e:
+            st.error(f"Error during balancing: {e}")
+            st.info("Check if all atoms in reactants are also present in products.")
+        else:
+            if len(input_data["reactants"]) == 0 or len(input_data["products"]) == 0:
+                st.warning("⚠️ Please add both Reagents and Products first!")
+        
+
 
 if st.sidebar.button("⚛️ Molecular visulization"):
     go_to("Molecular visualization")
