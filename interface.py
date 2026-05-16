@@ -11,12 +11,11 @@ import plotly.graph_objects as go
 
 
 st.set_page_config(page_title="Green Chemistry Calculator", page_icon=":leaves:")
-st.image(r"C:\Users\cvitt\Green_chem_project\PPC.jpg.jpg")
-st.title("🌿 Green Chemistry Calculator")
-st.header("Welcome to Green Chemistry Calculator a powerful tool that can calculate the greenness of your reaction!")
+st.image(r"C:\Users\cvitt\Green_chem_project\EcoChem.jpg")
+st.header("Welcome to EcoChem a powerful tool that can calculate the greenness of your reaction!")
 st.divider()
 st.write("""
-With **Green Chemistry Calculator**, you can define how "green" your reaction is by calculating:
+With **EcoChem**, you can define how "green" your reaction is by calculating:
 * **PMI** (Process Mass Intensity)
 * **E-factor**
 * **Atom Economy**, and more!
@@ -28,7 +27,7 @@ With **Green Chemistry Calculator**, you can define how "green" your reaction is
 * **Stoichiometry**: Don't know how to equilibrate your reaction? No problem! We will do it for you. Just head over to the **Stoichiometry** section.
 * **Molecular Visualization**: If you want to visualize the reaction or you only have the molecular structures, go to the **Molecular Visualization** page.
 
-Have fun using **Green Chemistry Calculator**! 🚀
+Have fun using **EcoChem**! 🚀
 """)
 
 
