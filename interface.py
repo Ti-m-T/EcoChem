@@ -8,6 +8,13 @@ from Atom_economy_function import calcul_coef_stoechio, calculate_eco_atm_M
 from rdkit.Chem import rdMolDescriptors
 import re
 import plotly.graph_objects as go
+from dataclasses import dataclass, field
+from experiment import Reaction
+from experiment import Chemical
+from experiment import Extras
+from experiment import LiquidChemical
+from experiment import Solvent
+from experiment import Extractant
 
 
 st.set_page_config(page_title="Green Chemistry Calculator", page_icon=":leaves:")
@@ -247,8 +254,9 @@ input_data = {"reactants": st.session_state.get("reag_list", []), "products":st.
 
 if st.button("⚖️ Calculate Coefficients"):
     if input_data["reactants"] and input_data["products"]:
-        try:
-            results = calcul_coef_stoechio(input_data)
+
+        try: 
+            results = experiment.stoich_of_reaction(input_data)
             st.success("Reaction Balanced!")
             col1, col2 = st.columns(2)
             with col1:
