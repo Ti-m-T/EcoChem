@@ -10,11 +10,11 @@ from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors
 #import os
 #from streamlit_ketcher import st_ketcher
 #from rdkit.Chem import rdFingerprintGenerator
-import numpy as np
+#import numpy as np
 #import mols2grid  
-import streamlit.components.v1 as components
-import plotly.figure_factory as ff
-from typing import Tuple, List
+#import streamlit.components.v1 as components
+#import plotly.figure_factory as ff
+#from typing import Tuple, List
 import pubchempy as pcp
 from chempy.chemistry import balance_stoichiometry
 from thermo import chemical as density_finder
@@ -26,7 +26,11 @@ class Chemical: # Class grouping all chemicals
 
     smiles : str
 
-    cid : int | None = None 
+    CID : int | None = None 
+
+    GHS_codes :list = field (default_factory = list)
+
+    GHS_labels : list = field (default_factory = list)
     
 
     def __post_init__(self):
@@ -40,6 +44,7 @@ class Chemical: # Class grouping all chemicals
             self.logp = rdMolDescriptors.CalcCrippenDescriptors(self.mol)[0] # Finds the hydrophobicity of the molecule
 
             self.mol_f = rdMolDescriptors.CalcMolFormula(self.mol) # Finds the molecular formula using the smiles
+
             self.coeff: int=1
 
             self.nb_atom = Chem.AddHs(self.mol).GetNumAtoms() # Finds the number of atoms in the molecule including hydrogens
@@ -53,7 +58,7 @@ class Chemical: # Class grouping all chemicals
 
             self.smiles = "Invalid"
 
-            self.cid = "None"
+            self.CID = "None"
 
         
     
@@ -67,36 +72,116 @@ class Chemical: # Class grouping all chemicals
         if self.mw>0:
          self.moles=value/self.mw
 
-    def CID(self) :
+    def get_CID(self) :
 
         try :
             
             CID = pcp.get_cids(self.smiles, "smiles")
             
-
             if CID :
 
                 self.CID = CID[0]
 
+                return self.CID
+
             else : 
                 
                 self.CID = None 
+
+                return None
             
-            return self.CID
-        
         except Exception as e :
+
             print(f"CID error : {e}")
-            self.cid = None 
+            self.CID = None 
+
             return None 
-
-    def GHS(self) :
         
-        self.CID()
 
 
+    def get_GHS(self) :
 
         
 
+        if self.CID is None :
+        
+            self.get_CID()
+
+        if self.CID is None :
+
+            return None
+        
+        print(self.CID)
+
+
+        url = (f"https://pubchem.ncbi.nlm.nih.gov/" f"rest/pug_view/data/compound/{self.CID}/JSON")
+
+        data = requests.get(url).json()
+
+        self.GHS_codes = []
+        self.GHS_labels = []
+
+        def extract_ghs(section):
+
+            if isinstance(section, dict):
+
+                # ONLY process correct section
+                if section.get("TOCHeading") == "GHS Classification":
+
+                    def collect(obj):
+
+                        if isinstance(obj, dict):
+
+                            for v in obj.values():
+
+                                if isinstance(v, str):
+
+                                    if v.startswith("H") and ":" in v:
+
+                                        code, label = v.split(":", 1)
+
+                                        self.GHS_codes.append(code.strip())
+                                        self.GHS_labels.append(label.strip())
+
+                                else:
+                                    collect(v)
+
+                        elif isinstance(obj, list):
+
+                            for item in obj:
+                                collect(item)
+
+                    collect(section)
+
+                    return  # stop after finding GHS section
+
+                # continue searching other branches
+                for v in section.values():
+                    extract_ghs(v)
+
+            elif isinstance(section, list):
+
+                for item in section:
+                    extract_ghs(item)
+
+        extract_ghs(data)
+
+        clean_codes = []
+        clean_labels = []
+
+        for c in self.GHS_codes:
+
+        # remove "(100%)" etc
+            code = c.split()[0]
+            clean_codes.append(code)
+
+            self.GHS_codes = list(dict.fromkeys(clean_codes))
+            self.GHS_labels = list(dict.fromkeys(self.GHS_labels))
+
+        return {
+        "codes": self.GHS_codes,
+        "labels": self.GHS_labels
+    }
 
 
 
@@ -235,14 +320,17 @@ main_product=Chemical(smiles="C(=O)=O")
 Solvent
 reacto=Reaction()
 
-#print(p1.smiles)
-for reactant in react.reactants :
-    #reactant.CID()
-    #print(reactant.CID)
-    print(reactant,"r")
 
-for bprod in react.byproducts :
-    #bprod.CID()
-    #print(bprod.CID)
-    print(bprod,"p")
-print(react.wanted_product)
+for chem in react.reactants:
+    chem.get_GHS()
+    print(chem.GHS_codes)
+    print(chem.GHS_labels)
+
+react.wanted_product.get_GHS()
+print(react.wanted_product.GHS_codes)
+print(react.wanted_product.GHS_labels)
+
+for byprod in react.byproducts :
+    byprod.get_GHS()
+    print(byprod.GHS_codes)
+    print(byprod.GHS_labels)
