@@ -1,41 +1,61 @@
 from dataclasses import dataclass, field
-import re
+#import re
 from rdkit import Chem
-import streamlit as st
+#import streamlit as st
 from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors
-from stmol import showmol
-import py3Dmol
-from pathlib import Path
-import pandas as pd
-import os
-from streamlit_ketcher import st_ketcher
-from rdkit.Chem import rdFingerprintGenerator
+#from stmol import showmol
+#import py3Dmol
+#from pathlib import Path
+#import pandas as pd
+#import os
+#from streamlit_ketcher import st_ketcher
+#from rdkit.Chem import rdFingerprintGenerator
 import numpy as np
-import mols2grid
+#import mols2grid  
 import streamlit.components.v1 as components
 import plotly.figure_factory as ff
 from typing import Tuple, List
 import pubchempy as pcp
 from chempy.chemistry import balance_stoichiometry
 from thermo import chemical as density_finder
+import requests
+import pubchempy as pcp
 
 @dataclass
 class Chemical: # Class grouping all chemicals 
-    smiles: str
+
+    smiles : str
+
+    cid : int | None = None 
+    
 
     def __post_init__(self):
+
         self.mol = Chem.MolFromSmiles(self.smiles) # Gets molecular object from smiles
+
         if self.mol:
-            self.mw=rdMolDescriptors.CalcExactMolWt(self.mol) # Calculates molecular weight from smiles
-            self.logp=rdMolDescriptors.CalcCrippenDescriptors(self.mol)[0] # Finds the hydrophobicity of the molecule
-            self.mol_f=rdMolDescriptors.CalcMolFormula(self.mol) # Finds the molecular formula using the smiles
+
+            self.mw = rdMolDescriptors.CalcExactMolWt(self.mol) # Calculates molecular weight from smiles
+
+            self.logp = rdMolDescriptors.CalcCrippenDescriptors(self.mol)[0] # Finds the hydrophobicity of the molecule
+
+            self.mol_f = rdMolDescriptors.CalcMolFormula(self.mol) # Finds the molecular formula using the smiles
             self.coeff: int=1
+
             self.nb_atom = Chem.AddHs(self.mol).GetNumAtoms() # Finds the number of atoms in the molecule including hydrogens
+
             self.moles: float = 0.0
+
             self._mass: float = 0.0
+
         else:
             self.mw = 0.0
+
             self.smiles = "Invalid"
+
+            self.cid = "None"
+
+        
     
     @property
     def mass(self):
@@ -46,6 +66,41 @@ class Chemical: # Class grouping all chemicals
         self._mass=value
         if self.mw>0:
          self.moles=value/self.mw
+
+    def CID(self) :
+
+        try :
+            
+            CID = pcp.get_cids(self.smiles, "smiles")
+            
+
+            if CID :
+
+                self.CID = CID[0]
+
+            else : 
+                
+                self.CID = None 
+            
+            return self.CID
+        
+        except Exception as e :
+            print(f"CID error : {e}")
+            self.cid = None 
+            return None 
+
+    def GHS(self) :
+        
+        self.CID()
+
+
+
+        
+
+
+
+
+
 
 @dataclass
 class ChemswithMass(Chemical):
@@ -91,14 +146,14 @@ class Reaction:
     Chosen_Yield: float = 1
     
     def stoich_of_reaction(self):
-        reac={reactant.mol_f for reactant in self.reactants}
-        prod={byproduct.mol_f for byproduct in self.byproducts}
+        reac = {reactant.mol_f for reactant in self.reactants}
+        prod = {byproduct.mol_f for byproduct in self.byproducts}
         prod.add(self.wanted_product.mol_f)
-        reactants_coeff,products_coeff=balance_stoichiometry(reac,prod)
+        reactants_coeff,products_coeff = balance_stoichiometry(reac,prod)
         for reactant in self.reactants:
-            reactant.coeff=reactants_coeff.get(reactant.mol_f,1)
+            reactant.coeff = reactants_coeff.get(reactant.mol_f,1)
         for product in self.byproducts:
-            product.coeff=products_coeff.get(product.mol_f,1)
+            product.coeff = products_coeff.get(product.mol_f,1)
         self.wanted_product.coeff=products_coeff.get(self.wanted_product.mol_f,1)
         return reactants_coeff,products_coeff
     
@@ -117,14 +172,14 @@ class Reaction:
         self.stoich_of_reaction()
         total_mass_solvent:float = 0.0
         for solvent in self.solvents:
-            total_mass_solvent+=solvent.m_liquid
+            total_mass_solvent +=solvent.m_liquid
         return total_mass_solvent
     
     def total_mass_extractants(self):
         self.stoich_of_reaction()
         total_mass_extractant:float = 0.0
         for extractant in self.extractants:
-            total_mass_extractant+=extractant.m_liquid
+            total_mass_extractant += extractant.m_liquid
         return total_mass_extractant
 
     def total_mass_reactants(self):
@@ -168,16 +223,26 @@ class Reaction:
 
         
 
-        
-'''r1=Chemical(smiles="C",mass=1)
-r2=Chemical(smiles="O=O",mass=1)
-p1=Chemical(smiles="C(=O)=O",mass=1)
-p2=Chemical(smiles="O",mass=1)
-react=Reaction([r1,r2],[p1,p2])'''
-reactants=[Chemical(smiles="C"),Chemical(smiles="O=O")]
+     
+r1=Chemical(smiles="C")
+r2=Chemical(smiles="O=O")
+p1=Chemical(smiles="C(=O)=O")
+p2=Chemical(smiles="O")
+react=Reaction([r1,r2],[p1],p2)
+reactants = [Chemical(smiles="C"),Chemical(smiles="O=O")]
 byproducts=[Chemical(smiles="O")]
 main_product=Chemical(smiles="C(=O)=O")
 Solvent
 reacto=Reaction()
 
+#print(p1.smiles)
+for reactant in react.reactants :
+    #reactant.CID()
+    #print(reactant.CID)
+    print(reactant,"r")
 
+for bprod in react.byproducts :
+    #bprod.CID()
+    #print(bprod.CID)
+    print(bprod,"p")
+print(react.wanted_product)
