@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from re import search
 #import re
 from rdkit import Chem
 #import streamlit as st
@@ -20,6 +21,7 @@ from chempy.chemistry import balance_stoichiometry
 from thermo import chemical as density_finder
 import requests
 import pubchempy as pcp
+from tomlkit import item
 
 @dataclass
 class Chemical: # Class grouping all chemicals 
@@ -28,10 +30,9 @@ class Chemical: # Class grouping all chemicals
 
     CID : int | None = None 
 
-    GHS_codes :list = field (default_factory = list)
+    GHS : dict = field (default_factory = dict)
 
-    GHS_labels : list = field (default_factory = list)
-    
+    pictograms : list = field(default_factory = list)
 
     def __post_init__(self):
 
@@ -60,8 +61,6 @@ class Chemical: # Class grouping all chemicals
 
             self.CID = "None"
 
-        
-    
     @property
     def mass(self):
         return self._mass
@@ -69,122 +68,155 @@ class Chemical: # Class grouping all chemicals
     @mass.setter
     def mass(self, value:float):
         self._mass=value
+        
         if self.mw>0:
          self.moles=value/self.mw
 
-    def get_CID(self) :
+    def get_CID(self) : # Searches for the CID of a molecule using the PubChem data base.
 
-        try :
+        try :       
+            CID = pcp.get_cids(self.smiles, "smiles") # tries to use the smiles to get the CID of the molecule from PubChem database.
             
-            CID = pcp.get_cids(self.smiles, "smiles")
-            
-            if CID :
-
+            if CID : # if the CID is found it's stored in the class and returned.
                 self.CID = CID[0]
+                return self.CID 
 
-                return self.CID
-
-            else : 
-                
+            else : # if the CID is not found the CID is set to None.
                 self.CID = None 
-
                 return None
             
-        except Exception as e :
+        except Exception as e : # If there is an error during the search for the CID we print the error and set the CID to None.
 
             print(f"CID error : {e}")
             self.CID = None 
 
             return None 
         
-
-
     def get_GHS(self) :
 
-        
-
-        if self.CID is None :
-        
+        if self.CID is None : # If the CID is not set, search for it using the get_CID function.
             self.get_CID()
 
-        if self.CID is None :
-
+        if self.CID is None : # If the CID is not found or an error occurs then we return not GHS.
             return None
         
-        print(self.CID)
-
-
-        url = (f"https://pubchem.ncbi.nlm.nih.gov/" f"rest/pug_view/data/compound/{self.CID}/JSON")
+        url = (
+            f"https://pubchem.ncbi.nlm.nih.gov/" 
+            f"rest/pug_view/data/compound/{self.CID}/JSON"
+        ) # We use the CID information to acces the PubChem database of the said molecule. We use the requests library to get the data in json format.
 
         data = requests.get(url).json()
 
-        self.GHS_codes = []
-        self.GHS_labels = []
+        self.GHS = {} # We create a dictionary to store the GHS information.
 
         def extract_ghs(section):
 
-            if isinstance(section, dict):
+            if isinstance(section, dict): # We asks if the section is a dictionary.
 
-                # ONLY process correct section
-                if section.get("TOCHeading") == "GHS Classification":
+                if section.get("TOCHeading") == "GHS Classification": # We search for the section of the database that contains the GHS information. If we find it we extract the GHS codes and labels and store them in the class lists.
 
-                    def collect(obj):
+                    def collect_GHS(section): # Recursive function to collect GHS codes and labels from the section of the database that contains the GHS information.
 
-                        if isinstance(obj, dict):
+                        if isinstance(section, dict): # Case our data is a dictionary. 
 
-                            for v in obj.values():
+                            for values in section.values(): # Since section is a dictionary we loop through its values to find the GHS codes and labels.
 
-                                if isinstance(v, str):
+                                if isinstance(values, str): # We check if the values are strings.
 
-                                    if v.startswith("H") and ":" in v:
+                                    if values.startswith("H") and ":" in values: # We check for "Hazard statements" , which start with H and are followed by a number, and are separated from their label by a ":"
 
-                                        code, label = v.split(":", 1)
+                                        raw_code = values.split(":", 1)[0]
+                                        code = raw_code.split()[0].strip()
+                                        label = values  .split(":", 1)[1].strip() # We extract the code and label from the value string.
 
-                                        self.GHS_codes.append(code.strip())
-                                        self.GHS_labels.append(label.strip())
+                                        if code not in self.GHS :
 
-                                else:
-                                    collect(v)
+                                            self.GHS[code] = label  # We store the code and label in the GHS dictionary of the class if the code is not already in it.
 
-                        elif isinstance(obj, list):
+                                else: # If the values are not strings we call the collect function on them to keep searching for GHS codes and labels in the database.
+                                    collect_GHS(values)
 
-                            for item in obj:
-                                collect(item)
+                        elif isinstance(section, list): # We ask if the section is a list.
 
-                    collect(section)
+                            for item in section: # If it is a list we loop through its items and call the collect function on them to keep searching for GHS codes and labels in the database.
+                                collect_GHS(item)
 
-                    return  # stop after finding GHS section
+                    collect_GHS(section) # We define the collect_GHS function and call it on the section of the database that contains the GHS information to extract all GHS codes and labels.
 
-                # continue searching other branches
-                for v in section.values():
-                    extract_ghs(v)
+                    return  # We return after finding the GHS information to avoid unnecessary searching in the rest of the database.
+                
+                for values in section.values(): # If the current dictionary is not the GHS section we explore the PubChem database deeper.
+                    extract_ghs(values)
 
-            elif isinstance(section, list):
+            elif isinstance(section, list): # If the section wasn't a dictionary but a list we loop through its items and call the extract_ghs function on them to keep searching for the GHS information in the database.
 
                 for item in section:
+
                     extract_ghs(item)
 
-        extract_ghs(data)
-
-        clean_codes = []
-        clean_labels = []
-
-        for c in self.GHS_codes:
-
-        # remove "(100%)" etc
-            code = c.split()[0]
-            clean_codes.append(code)
-
-            self.GHS_codes = list(dict.fromkeys(clean_codes))
-            self.GHS_labels = list(dict.fromkeys(self.GHS_labels))
+        extract_ghs(data) # We execute the extract_ghs function on the data we got from the PubChem database of the molecule wanted.
 
         return {
-        "codes": self.GHS_codes,
-        "labels": self.GHS_labels
+        "pictograms": list(self.pictograms),
+        "codes": list(self.GHS.keys()),
+        "labels": list(self.GHS.values())
     }
 
+    def get_pictograms(self) -> list:
 
+        if self.CID is None:
+            self.get_CID()
 
+        if self.CID is None:
+            return []
+
+        url = (
+            f"https://pubchem.ncbi.nlm.nih.gov/"
+            f"rest/pug_view/data/compound/{self.CID}/JSON"
+        )
+
+        data = requests.get(url).json()
+
+        self.pictograms = set()
+
+        mapping = {
+        "GHS01": "Exploding bomb",
+        "GHS02": "Flame",
+        "GHS03": "Oxidizer (flame over circle)",
+        "GHS04": "Gas cylinder",
+        "GHS05": "Corrosion",
+        "GHS06": "Skull and crossbones",
+        "GHS07": "Exclamation mark",
+        "GHS08": "Health hazard",
+        "GHS09": "Environment"
+    } # We introduce a mapping between the possible GHS pictogram code and their meaning.
+
+        def search_pictograms(section): # Recursive function to search for GHS pictograms.
+
+            if isinstance(section, dict): # We ask if the section is a dictionary. 
+
+                for values in section.values(): # If it is a dictionary we loop through its values to find the GHS pictogram codes.
+
+                    if isinstance(values, str): # We check if the values are strings.
+
+                        for code, name in mapping.items(): # We loop through the mapping of GHS pictogram codes and names.
+
+                            if code in values: # If we find a GHS pictogram code in the value string.
+
+                                self.pictograms.add(name) # We add the name of the pictogram to the list of pictograms.
+
+                    else:
+                        search_pictograms(values) # If the values are not strings we do a recursive call on them to keep searching for GHS pictogram codes in the database.
+
+            elif isinstance(section, list): # We ask if the section is a list.
+
+                for item in section: # If it is a list we loop through its items.
+
+                    search_pictograms(item) # We do a recursive call on the items to keep searching for GHS pictogram codes in the database.
+
+        search_pictograms(data) # We execute the search_pictograms function on the data we got from the PubChem database of the molecule wanted.
+
+        return list(self.pictograms) # We return the list of GHS pictograms found for the molecule.
 
 
 @dataclass
@@ -195,7 +227,6 @@ class ChemswithMass(Chemical):
         super().__post_init__()
         if self.initial_mass>0:
             self.mass=self.initial_mass
-
 
 @dataclass    
 class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals that are liquids, mainly used for solvents and extractants
@@ -323,14 +354,17 @@ reacto=Reaction()
 
 for chem in react.reactants:
     chem.get_GHS()
-    print(chem.GHS_codes)
-    print(chem.GHS_labels)
+    chem.get_pictograms()
+    print(chem.GHS)
+    print(chem.pictograms)
 
 react.wanted_product.get_GHS()
-print(react.wanted_product.GHS_codes)
-print(react.wanted_product.GHS_labels)
+react.wanted_product.get_pictograms()
+print(react.wanted_product.GHS)
+print(react.wanted_product.pictograms)
 
 for byprod in react.byproducts :
     byprod.get_GHS()
-    print(byprod.GHS_codes)
-    print(byprod.GHS_labels)
+    byprod.get_pictograms()
+    print(byprod.GHS)
+    print(byprod.pictograms)
