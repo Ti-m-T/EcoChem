@@ -14,14 +14,14 @@ from thermo import chemical as density_finder
 from experiment import Reaction
 from experiment import Chemical
 from experiment import ChemswithMass
-from experiment import LiquidChemical
+#from experiment import LiquidChemical
 from experiment import Solvent
 from experiment import Extractant
 
 
 
 st.set_page_config(page_title="EcoChem", page_icon=":leaves:")
-st.image(r"C:\Users\cvitt\Green_chem_project\EcoChem.jpg")
+st.image("EcoChem.jpg")
 st.header("Welcome to EcoChem a powerful tool that can calculate the greenness of your reaction!")
 st.divider()
 st.write("""
@@ -444,7 +444,7 @@ def display_linear_gauge_efactor(value, title="E-Factor"): #Colored bar function
     """
     st.markdown(gauge_html, unsafe_allow_html=True)
 
-def st_skulls(num_skulls=20): #Definition of a function to pop skulls if the economy atom of the reaction is below 40
+def show_skulls(num_skulls=20): #Definition of a function to pop skulls if the economy atom of the reaction is below 40
     skulls_html = f"""
     <div id="skulls-container-{random.randint(0, 1000)}" class="skulls-temporary">
         {"".join([f'<span style="left:{random.uniform(5,95)}%; animation-delay:{random.uniform(0,2)}s;">💀</span>' for _ in range(num_skulls)])}
@@ -486,7 +486,7 @@ if st.button("♻️ Green Metrics: Atom Economy"):
             wanted_product_obj = Chemical(smiles=prod_smiles_list[0])
             byproducts_objects = [Chemical(smiles=s) for s in prod_smiles_list[1:]]
 
-            experiment = Reaction(reactants=reactants_objects, wanted_product=wanted_product_obj, byproducts=byproducts_objects)
+            experiment = Reaction(reactants=reactants_objects, wanted_product = wanted_product_obj, byproducts = byproducts_objects)
             ae_result = experiment.calcul_eco_atom()
             
             display_linear_gauge(ae_result, "Atom Economy")
@@ -495,7 +495,7 @@ if st.button("♻️ Green Metrics: Atom Economy"):
                 st.balloons()
                 st.success("Excellent! This reaction is extremely atom-efficient.")
             elif ae_result < 40: #Warning message
-                st_skulls()
+                show_skulls()
                 st.warning("⚠️ Warning: this reaction produces too much waste.")
                 
         except Exception as e:
@@ -506,25 +506,33 @@ if st.button("♻️ Green Metrics: Atom Economy"):
 
 
 if st.button("🧮 Green Metrics: PMI"):
+
     reag_smiles_list = st.session_state.get("reag_list", [])
     prod_smiles_list = st.session_state.get("prod_list", [])
 
     if len(reag_smiles_list) == 0 or len(prod_smiles_list) == 0:
         st.error("Please, add a reactant and a product first.")
+
     else:
+
         try:
-            experiment = Reaction(reactants=[Chemical(smiles=s) for s in reag_smiles_list], wanted_product=ChemswithMass(smiles=prod_smiles_list[0], initial_mass=st.session_state.get("wanted_product_mass", 1.0)),byproducts=[Chemical(smiles=s) for s in prod_smiles_list[1:]],
-                Catalysts=[ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],extractants=[Extractant(smiles=s, volume=v) for s, v in st.session_state.get("extr_list", [])])
+
+            experiment = Reaction(reactants=[Chemical(smiles=s) for s in reag_smiles_list], wanted_product = ChemswithMass(smiles = prod_smiles_list[0], initial_mass = st.session_state.get("wanted_product_mass", 1.0)) ,byproducts = [Chemical(smiles=s) for s in prod_smiles_list[1:]],
+            Catalysts = [ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],extractants=[Extractant(smiles=s, volume=v) for s, v in st.session_state.get("extr_list", [])])
+            
             pmi_result = experiment.PMI()
 
             display_linear_gauge_pmi(pmi_result, "PMI")
             st.metric(label="Process Mass Intensity (PMI)", value=f"{pmi_result:.2f}")
+
             if pmi_result <= 20:
                 st.balloons()
                 st.success("Fantastic! Extremely low material intensity.")
+
             elif pmi_result > 100:
-                st_skulls()
+                show_skulls()
                 st.warning("⚠️ High PMI: This reaction requires a significant amount of auxiliary materials (solvents/catalysts).")
+
         except Exception as e:
             st.error(f"Error during PMI calculation: {e}")
 
@@ -536,18 +544,21 @@ if st.button("📉 Environmental Factor (E-Factor)"):
             st.error("Please, add a reactant and a product first.") 
     else:
         try:
-            experiment = Reaction(reactants=[Chemical(smiles=s) for s in reag_smiles_list], wanted_product=ChemswithMass(smiles=prod_smiles_list[0], initial_mass=st.session_state.get("wanted_product_mass", 1.0)),byproducts=[Chemical(smiles=s) for s in prod_smiles_list[1:]],
-                Catalysts=[ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],extractants=[Extractant(smiles=s, volume=v) for s, v in st.session_state.get("extr_list", [])])
+            experiment = Reaction(reactants=[Chemical(smiles=s) for s in reag_smiles_list], wanted_product=ChemswithMass(smiles=prod_smiles_list[0], initial_mass = st.session_state.get("wanted_product_mass", 1.0)), byproducts=[Chemical(smiles=s) for s in prod_smiles_list[1:]], 
+                                  Catalysts=[ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])], solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])], extractants=[Extractant(smiles=s, volume=v) for s, v in st.session_state.get("extr_list", [])])
             ef_result= experiment.e_factor()
 
             display_linear_gauge_efactor(ef_result, "E-Factor")
             st.metric(label="E-Factor (kg waste / kg product)", value=f"{ef_result:.2f}")
+            
             if ef_result < 1.0:
                 st.balloons()
                 st.success("Excellent! This reaction generates almost zero waste.")
+
             elif ef_result > 50:
-                st_skulls()
+                show_skulls()
                 st.warning("⚠️ Warning: This process generates a very high amount of waste relative to the target product.")
+
         except Exception as e:
             st.error(f"Error during E-Factor calculation: {e}")
             

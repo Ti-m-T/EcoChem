@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
+from math import exp
 from re import search
+import re
 #import re
 from rdkit import Chem
 #import streamlit as st
@@ -18,10 +20,11 @@ from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors
 #from typing import Tuple, List
 import pubchempy as pcp
 from chempy.chemistry import balance_stoichiometry
-from thermo import chemical as density_finder
+from thermo import chemical
 import requests
 import pubchempy as pcp
 from tomlkit import item
+from sympy import sympify
 
 @dataclass
 class Chemical: # Class grouping all chemicals 
@@ -225,8 +228,9 @@ class ChemswithMass(Chemical):
 
     def __post_init__(self):
         super().__post_init__()
-        if self.initial_mass>0:
-            self.mass=self.initial_mass
+
+        if self.initial_mass > 0:
+            self.mass = self.initial_mass
 
 @dataclass    
 class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals that are liquids, mainly used for solvents and extractants
@@ -235,7 +239,15 @@ class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals th
 
     def __post_init__(self):
         super().__post_init__()
-        self.density = density_finder(self.smiles).rhols /1000
+        self.density = 0.0
+        try:
+            chem_data = chemical(self.smiles, T=298.15)
+
+            if hasattr(chem_data, "rhoL") and chem_data.rhoL:
+                self.density = chem_data.rhoL / 1000
+
+        except Exception:
+            self.density = 0.0
 
     @property
     def m_liquid(self):
@@ -262,82 +274,136 @@ class Reaction:
     Chosen_Yield: float = 1
     
     def stoich_of_reaction(self):
+
         reac = {reactant.mol_f for reactant in self.reactants}
-        prod = {byproduct.mol_f for byproduct in self.byproducts}
+        prod = {byproduct.mol_f for byproduct in self.byproducts} 
         prod.add(self.wanted_product.mol_f)
         reactants_coeff,products_coeff = balance_stoichiometry(reac,prod)
+
+
+        def calc_DOF_a_un(Coef_with_DOF: float | str ) -> float:
+   
+            rech_var = re.compile(r"\bx\d+\b") # We look for the DOF of form x followed by a number in the coefficient expression using regular expressions.
+
+            def evaluer_exp(Coef_with_DOF: float | str ) -> float:
+                
+                Coef_as_str = str(Coef_with_DOF)
+
+                Coef_as_str = rech_var.sub("1", Coef_as_str) # Sets DOF to 1.
+
+                try:
+                    return float(sympify(Coef_as_str)) # Tries to evaluate the expression with the DOF set to 1
+                except Exception : 
+            
+                    try:
+                        return float(Coef_as_str)
+                    except Exception as e:
+                        raise ValueError(f"Cannot evaluate expression: {Coef_with_DOF}") from e # If there is an error during the evaluation it raises an error.
+
+            coef_without_DOF = evaluer_exp(Coef_with_DOF)
+
+            return coef_without_DOF
+
         for reactant in self.reactants:
-            reactant.coeff = reactants_coeff.get(reactant.mol_f,1)
+            reactant.coeff = calc_DOF_a_un(reactants_coeff.get(reactant.mol_f,1))
+
         for product in self.byproducts:
-            product.coeff = products_coeff.get(product.mol_f,1)
-        self.wanted_product.coeff=products_coeff.get(self.wanted_product.mol_f,1)
+            product.coeff = calc_DOF_a_un(products_coeff.get(product.mol_f,1))
+
+        self.wanted_product.coeff = calc_DOF_a_un(products_coeff.get(self.wanted_product.mol_f,1))
+
         return reactants_coeff,products_coeff
     
     def calcul_eco_atom(self):
+
         self.stoich_of_reaction()
+
         return (self.wanted_product.coeff*self.wanted_product.mw)*100/sum(reactant.coeff*reactant.mw for reactant in self.reactants)
 
     def total_mass_catalysts(self):
-         self.stoich_of_reaction()
-         total_mass_catalyst=0
-         for catalyst in self.Catalysts:
-            total_mass_catalyst+=catalyst.mass
-         return total_mass_catalyst
+        #self.stoich_of_reaction()
+        total_mass_catalyst : float = 0.0
+
+        for catalyst in self.Catalysts:
+
+            total_mass_catalyst += catalyst.mass
+
+        return total_mass_catalyst
     
     def total_mass_solvents(self):
-        self.stoich_of_reaction()
-        total_mass_solvent:float = 0.0
+        #self.stoich_of_reaction()
+        total_mass_solvent : float = 0.0
+
         for solvent in self.solvents:
-            total_mass_solvent +=solvent.m_liquid
+         
+            total_mass_solvent += solvent.m_liquid
+
         return total_mass_solvent
     
     def total_mass_extractants(self):
-        self.stoich_of_reaction()
-        total_mass_extractant:float = 0.0
+        #self.stoich_of_reaction()
+        total_mass_extractant : float = 0.0
+        
+
         for extractant in self.extractants:
+
             total_mass_extractant += extractant.m_liquid
+
         return total_mass_extractant
 
     def total_mass_reactants(self):
         self.stoich_of_reaction()
-        total_mass_reactant:float = 0.0
+
+        total_mass_reactant : float = 0.0
+        
         for reactant in self.reactants:
+
             reactant.moles = self.wanted_product.moles/((self.wanted_product.coeff/reactant.coeff)*self.Chosen_Yield)
             reactant.mass = reactant.moles*reactant.mw
-            total_mass_reactant+=reactant.mass
+            total_mass_reactant += reactant.mass
+
         return total_mass_reactant
     
     def total_mass_byproducts(self):
         self.stoich_of_reaction()
-        total_mass_byproduct:float = 0.0
+
+        total_mass_byproduct : float = 0.0
+
         for byproduct in self.byproducts:
+
             byproduct.moles = self.wanted_product.moles/((self.wanted_product.coeff/byproduct.coeff))
             byproduct.mass = byproduct.moles*byproduct.mw
-            total_mass_byproduct+=byproduct.mass
+            total_mass_byproduct += byproduct.mass
+
         return total_mass_byproduct
     
     def mass_reactants_left(self):
         self.total_mass_reactants()
         self.stoich_of_reaction()
-        tot_mass_reactant_left:float = 0.0
+
+        tot_mass_reactant_left : float = 0.0
+
         for reactant in self.reactants:
-            mol_reactant_left=reactant.moles-(self.wanted_product.moles*reactant.coeff)/self.wanted_product.coeff
-            mass_reactant_left=mol_reactant_left*reactant.mw
-            tot_mass_reactant_left+=mass_reactant_left
+
+            mol_reactant_left = reactant.moles-(self.wanted_product.moles*reactant.coeff)/self.wanted_product.coeff
+            mass_reactant_left = mol_reactant_left*reactant.mw
+            tot_mass_reactant_left += mass_reactant_left
+
         return tot_mass_reactant_left
 
     def PMI(self):
         self.stoich_of_reaction()
+
         total_input = self.total_mass_reactants() + self.total_mass_solvents() + self.total_mass_extractants() + self.total_mass_catalysts()
         return total_input/self.wanted_product.mass
      
     def e_factor(self):
         self.stoich_of_reaction()
-        waste=self.total_mass_catalysts()+self.mass_reactants_left()+self.total_mass_extractants()+self.total_mass_solvents()+self.total_mass_byproducts
+
+        waste = self.total_mass_catalysts() + self.mass_reactants_left() + self.total_mass_extractants() + self.total_mass_solvents() + self.total_mass_byproducts()
         return waste/self.wanted_product.mass
         
 
-        
 
      
 r1=Chemical(smiles="C")
