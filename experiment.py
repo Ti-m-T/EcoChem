@@ -236,6 +236,7 @@ class ChemswithMass(Chemical):
 class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals that are liquids, mainly used for solvents and extractants
     volume: float = 0.0
     evaluated_density: float = field(init=False, default=0.0)
+    user_density: float = 0.0
 
     def __post_init__(self):
         super().__post_init__()
@@ -243,7 +244,6 @@ class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals th
 
         try:
             chem_data = density_finder(self.smiles, T=298.15)
-            print(dir(chem_data))
 
             if chem_data.rhol is not None :
                 self.density = chem_data.rhol / 1000
@@ -254,7 +254,11 @@ class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals th
 
     @property
     def m_liquid(self):
-        return self.density * self.volume
+        if self.user_density > 0:
+            return self.user_density * self.volume
+        #return self.density * self.volume
+
+        #il faut encore implementer un verificateur si on a le temps 
 
 
 @dataclass    
