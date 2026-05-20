@@ -273,11 +273,12 @@ extr_volume = st.number_input("Volume (mL)", min_value=0.0, step=10.0, key="inpu
     
 if st.button("➕ Add Extractant", key="btn_add_extractant_main"):
     if extr_input:
-        calculated_smiles = name_to_smiles(extr_input)
-        if not calculated_smiles:
-            from rdkit import Chem
-            if Chem.MolFromSmiles(extr_input):
-                calculated_smiles = extr_input
+        extr_input = extr_input.strip()
+        calculated_smiles = None
+        if Chem.MolFromSmiles(extr_input):
+            calculated_smiles = extr_input
+        else:
+            calculated_smiles = name_to_smiles(extr_input)
         if calculated_smiles:
             st.session_state.extr_list.append((calculated_smiles, extr_volume))
             st.success(f"Added successfully: `{calculated_smiles}`")
