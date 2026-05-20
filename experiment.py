@@ -20,7 +20,7 @@ from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors
 #from typing import Tuple, List
 import pubchempy as pcp
 from chempy.chemistry import balance_stoichiometry
-from thermo import chemical
+from thermo import Chemical as density_finder
 import requests
 import pubchempy as pcp
 from tomlkit import item
@@ -235,42 +235,50 @@ class ChemswithMass(Chemical):
 @dataclass    
 class LiquidChemical(Chemical): # Subclass of chemical grouping all chemicals that are liquids, mainly used for solvents and extractants
     volume: float = 0.0
-    density: float = field(init=False, default=0.0)
+    evaluated_density: float = field(init=False, default=0.0)
 
     def __post_init__(self):
         super().__post_init__()
         self.density = 0.0
+
         try:
-            chem_data = chemical(self.smiles, T=298.15)
+            chem_data = density_finder(self.smiles, T=298.15)
+            print(dir(chem_data))
 
-            if hasattr(chem_data, "rhoL") and chem_data.rhoL:
-                self.density = chem_data.rhoL / 1000
+            if chem_data.rhol is not None :
+                self.density = chem_data.rhol / 1000
 
-        except Exception:
+        except Exception as e :
+            print(e)
             self.density = 0.0
 
     @property
     def m_liquid(self):
-        return self.density*self.volume
+        return self.density * self.volume
 
 
 @dataclass    
 class Solvent(LiquidChemical): # Subclass of LiquidChemical meant for solvents
-    pass
+
+    def __post_init__(self):
+        super().__post_init__()
 
 @dataclass    
 class Extractant(LiquidChemical): # Subclass of LiquidChemical meant for extractants
-    pass
+
+    def __post_init__(self):
+        super().__post_init__()
+
+
 
 @dataclass
 class Reaction:
-    reactants: list[Chemical] = field(default_factory=list) # Class that contains all reactants used in a reaction
-    byproducts: list[Chemical] = field(default_factory=list) # Class that contains all products used in a reaction
-    #wanted_products: list[ChemswithMass] = field(default_factory=list)
-    wanted_product: ChemswithMass = field(default_factory=lambda: ChemswithMass(smiles=""))
-    Catalysts: list[ChemswithMass] = field(default_factory=list)
-    solvents: list[Solvent] = field(default_factory=list)
-    extractants: list[Extractant] = field(default_factory=list)
+    reactants: list[Chemical] = field(default_factory = list) # Class that contains all reactants used in a reaction
+    byproducts: list[Chemical] = field(default_factory = list) # Class that contains all products used in a reaction
+    wanted_product: ChemswithMass = field(default_factory = lambda: ChemswithMass(smiles = ""))
+    Catalysts: list[ChemswithMass] = field(default_factory = list)
+    solvents: list[Solvent] = field(default_factory = list)
+    extractants: list[Extractant] = field(default_factory = list)
     Chosen_Yield: float = 1
     
     def stoich_of_reaction(self):
@@ -318,7 +326,7 @@ class Reaction:
 
         self.stoich_of_reaction()
 
-        return (self.wanted_product.coeff*self.wanted_product.mw)*100/sum(reactant.coeff*reactant.mw for reactant in self.reactants)
+        return (self.wanted_product.coeff*self.wanted_product.nb_atom)*100/sum(reactant.coeff*reactant.nb_atom for reactant in self.reactants)
 
     def total_mass_catalysts(self):
         #self.stoich_of_reaction()
@@ -405,32 +413,20 @@ class Reaction:
         
 
 
-     
-r1=Chemical(smiles="C")
+
+
+
+
+
+
+
+r1=Chemical(smiles="CCO")
 r2=Chemical(smiles="O=O")
-p1=Chemical(smiles="C(=O)=O")
+r3=Chemical(smiles="CC=O")
+p1=Chemical(smiles="CC(=O)O")
 p2=Chemical(smiles="O")
-react=Reaction([r1,r2],[p1],p2)
-reactants = [Chemical(smiles="C"),Chemical(smiles="O=O")]
-byproducts=[Chemical(smiles="O")]
-main_product=Chemical(smiles="C(=O)=O")
-Solvent
-reacto=Reaction()
+p3=Chemical(smiles="C=O")
 
-
-for chem in react.reactants:
-    chem.get_GHS()
-    chem.get_pictograms()
-    print(chem.GHS)
-    print(chem.pictograms)
-
-react.wanted_product.get_GHS()
-react.wanted_product.get_pictograms()
-print(react.wanted_product.GHS)
-print(react.wanted_product.pictograms)
-
-for byprod in react.byproducts :
-    byprod.get_GHS()
-    byprod.get_pictograms()
-    print(byprod.GHS)
-    print(byprod.pictograms)
+react_2= Reaction(reactants=[r1, r2, r3], byproducts=[p2, p3], wanted_product=p1)
+results = react_2.calcul_eco_atom()
+print(results)
