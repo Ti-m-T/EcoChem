@@ -1,16 +1,26 @@
 import streamlit as st
+import sys
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
+import requests
 import os 
 import random
 from PIL import Image
-from Atom_economy_function import calcul_coef_stoechio, calculate_eco_atm_M
 from rdkit.Chem import rdMolDescriptors
 import re
 import plotly.graph_objects as go
+from dataclasses import dataclass, field
+from thermo import chemical as density_finder
+from experiment import Reaction
+from experiment import Chemical
+from experiment import ChemswithMass
+from experiment import LiquidChemical
+from experiment import Solvent
+from experiment import Extractant
 
 
-st.set_page_config(page_title="Green Chemistry Calculator", page_icon=":leaves:")
+
+st.set_page_config(page_title="EcoChem", page_icon=":leaves:")
 st.image(r"C:\Users\cvitt\Green_chem_project\EcoChem.jpg")
 st.header("Welcome to EcoChem a powerful tool that can calculate the greenness of your reaction!")
 st.divider()
@@ -40,6 +50,22 @@ if "number_products" not in st.session_state: st.session_state.number_products =
 if "reag_list" not in st.session_state: st.session_state.reag_list = []
 if "solv_list" not in st.session_state: st.session_state.solv_list = []
 if "prod_list" not in st.session_state: st.session_state.prod_list = []
+
+def convert_to_latex_subscripts(formula: str) -> str: #Function to write the molecular formulas in "latex" style
+    return re.sub(r'(\d+)', r'_{\1}', formula)
+
+def name_to_smiles(name: str) -> str: #Function that returns the smile given a chemical name
+    try:
+        chemical_name = name.strip()
+        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{chemical_name}/property/CanonicalSMILES/TXT"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            return response.text.strip()
+        else:
+            return None
+    except Exception:
+        return None
 
 
 def go_to(page_name):   #Definition of a function to create buttons to redirect users to other pages
@@ -222,13 +248,13 @@ if st.session_state.page_active == "Molecular visualization":
             string_list = ", ".join(all_smiles)
         
             st.write(f"**SMILES List:** {string_list}")
-
         else:
             st.warning("⚠️ Please draw at least one reactant and one product.")
 
 all_smiles_dict = {"Reagent":[], "Solvent":[], "Product":[]}
 if "reag_list" in st.session_state:
     all_smiles_dict["Reagent"] = [s for s in st.session_state.reag_list if s]
+
 if "solv_list" in st.session_state.solv_list:
     all_smiles_dict["Solvent"] = [s for s in st.session_state.solv_list if s]
         
@@ -237,40 +263,91 @@ if "prod_list" in st.session_state:
 print(all_smiles_dict)
 
 
+if "extr_list" not in st.session_state:
+    st.session_state.extr_list = []
+
+st.subheader("🧪 Add Extractants (for Work-up)")
+
+extr_input = st.text_input("Extractant (Name or SMILES)", key="input_extr_name", placeholder="e.g., ethyl acetate, hexane, etc...")
+extr_volume = st.number_input("Volume (mL)", min_value=0.0, step=10.0, key="input_extr_volume")
+    
+if st.button("➕ Add Extractant", key="btn_add_extractant_main"):
+    if extr_input:
+        calculated_smiles = name_to_smiles(extr_input)
+        if not calculated_smiles:
+            from rdkit import Chem
+            if Chem.MolFromSmiles(extr_input):
+                calculated_smiles = extr_input
+        if calculated_smiles:
+            st.session_state.extr_list.append((calculated_smiles, extr_volume))
+            st.success(f"Added successfully: `{calculated_smiles}`")
+            st.rerun()
+        else:
+            st.error(f"❌ Could not resolve '{extr_input}'. Check the spelling.")
+    else:
+        st.error("Please enter a name or SMILES first.")
+
+st.markdown("---")
+if len(st.session_state.extr_list) > 0:
+    st.write("### 📋 Current Extractants List:")
+    with st.container():
+        for i, (s, v) in enumerate(st.session_state.extr_list):
+            col_text, col_btn = st.columns([0.8, 0.2])
+            with col_text:
+                st.markdown(f"**{i+1}.** `{s}` — **{v} mL**")
+            with col_btn:
+                unique_key = f"remove_btn_{i}_{v}_{s.replace('=', '_')}"
+                if st.button("❌ Remove", key=unique_key):
+                    st.session_state.extr_list.pop(i)
+                    st.rerun() 
+else:
+    st.info("No extractants added yet.")
 
 if st.sidebar.button("🧪 Stoichiometry"):
     go_to("Stoichiometry")
     st.title("Stoichiometry")
     st.write("Write the chemical formula of your reactants, products and solvent to get the correct stoichiometry of the reaction!")
 
-input_data = {"reactants": st.session_state.get("reag_list", []), "products":st.session_state.get("prod_list", [])}
 
-if st.button("⚖️ Calculate Coefficients"):
-    if input_data["reactants"] and input_data["products"]:
-        try:
-            results = calcul_coef_stoechio(input_data)
+if st.button("⚖️ Calculate Stoichiometric Coefficients"):
+    reag_smiles_list = st.session_state.get("reag_list", [])
+    prod_smiles_list = st.session_state.get("prod_list", [])
+
+    if reag_smiles_list and prod_smiles_list:
+
+        try: 
+            reactant_object = [Chemical(smiles=s) for s in reag_smiles_list]
+            wanted_product_obj = Chemical(smiles=prod_smiles_list[0])
+            byproducts_objects = [Chemical(smiles=s) for s in prod_smiles_list[1:]]
+            experiment = Reaction(reactants = reactant_object, wanted_product= wanted_product_obj, byproducts= byproducts_objects)
+            reactants_coeff, products_coeff = experiment.stoich_of_reaction()
             st.success("Reaction Balanced!")
             col1, col2 = st.columns(2)
             with col1:
                 st.subheader("Reactants")
-                for smiles, coef in results["reactants"].items():
-                    formula = get_formula(smiles)
-                    st.latex(rf"{coef} \text{{ }} {formula}")
+                for reactant in experiment.reactants:
+                    formula_latex = convert_to_latex_subscripts(reactant.mol_f)
+                    st.latex(rf"\text{{{reactant.coeff} }} {formula_latex}")
+                    
             with col2:
                 st.subheader("Products")
-                for smiles, coef in results["products"].items():
-                    formula = get_formula(smiles)
-                    st.latex(rf"{coef} \text{{ }} {formula}")
-            st.session_state.stoich_results = results
+                wanted_latex = convert_to_latex_subscripts(experiment.wanted_product.mol_f)
+                st.latex(rf"\text{{{experiment.wanted_product.coeff}}} {wanted_latex}")
+
+                for byproduct in experiment.byproducts:
+                    byproduct_latex = convert_to_latex_subscripts(byproduct.mol_f)
+                    st.latex(rf"\text{{{byproduct.coeff} }} {byproduct_latex}")
+
+            st.session_state.stoich_results = {"reactants": reactants_coeff,"products": products_coeff}
         except Exception as e:
             st.error(f"Error during balancing: {e}")
             st.info("Check if all atoms in reactants are also present in products.")
         else:
-            if len(input_data["reactants"]) == 0 or len(input_data["products"]) == 0:
+            if len(reag_smiles_list) == 0 or len(prod_smiles_list) == 0:
                 st.warning("⚠️ Please add both Reagents and Products first!")
 
 st.divider()
-st.subheader("🌿 Green Metrics: Atom Economy")
+st.subheader("🌿 Green Metrics")
     
 input_data = {"reactants": st.session_state.get("reag_list", []),"products": st.session_state.get("prod_list", [])}
 
@@ -298,8 +375,70 @@ def display_linear_gauge(value, title="Atom Economy"): #Colored bar function
             </div>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 8px; color: #888;">
-            <span>Low Efficiency</span>
-            <span>Ideal Synthesis</span>
+            <span>Low Atom Economy</span>
+            <span>High Atom Economy</span>
+        </div>
+    </div>
+    """
+    st.markdown(gauge_html, unsafe_allow_html=True)
+
+def display_linear_gauge_pmi(value, title="PMI"): #Colored bar function
+    pos = max(0, min(100, value)) #Def of min and max values
+    
+    if pos < 50: color = "#ff4b4b"   # Color of the text
+    elif pos < 80: color = "#ffa500" 
+    else: color = "#00cc96"          
+    
+    gauge_html = f"""
+    <div style="font-family: sans-serif; margin: 20px 0; padding: 10px; background-color: #f9f9f9; border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <span style="font-weight: bold; font-size: 1.1rem; color: #333;">{title}</span>
+            <span style="font-weight: bold; font-size: 1.3rem; color: {color};">{value:.1f}%</span>
+        </div>
+        <div style="position: relative; height: 25px; width: 100%; border-radius: 12px; 
+                    background: linear-gradient(to right, #00cc96 0%, #ffeb3b 50%, #ff4b4b 100%); 
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="position: absolute; left: calc({pos}% - 10px); top: -12px; 
+                        width: 0; height: 0; 
+                        border-left: 10px solid transparent;
+                        border-right: 10px solid transparent;
+                        border-top: 15px solid #333;">
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 8px; color: #888;">
+            <span>Low PMI</span>
+            <span>High PMI</span>
+        </div>
+    </div>
+    """
+    st.markdown(gauge_html, unsafe_allow_html=True)
+
+def display_linear_gauge_efactor(value, title="E-Factor"): #Colored bar function
+    pos = max(0, min(100, value)) #Def of min and max values
+    
+    if pos < 50: color = "#ff4b4b"   # Color of the text
+    elif pos < 80: color = "#ffa500" 
+    else: color = "#00cc96"          
+    
+    gauge_html = f"""
+    <div style="font-family: sans-serif; margin: 20px 0; padding: 10px; background-color: #f9f9f9; border-radius: 10px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <span style="font-weight: bold; font-size: 1.1rem; color: #333;">{title}</span>
+            <span style="font-weight: bold; font-size: 1.3rem; color: {color};">{value:.1f}%</span>
+        </div>
+        <div style="position: relative; height: 25px; width: 100%; border-radius: 12px; 
+                    background: linear-gradient(to right, #00cc96 0%, #ffeb3b 50%, #ff4b4b 100%); 
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="position: absolute; left: calc({pos}% - 10px); top: -12px; 
+                        width: 0; height: 0; 
+                        border-left: 10px solid transparent;
+                        border-right: 10px solid transparent;
+                        border-top: 15px solid #333;">
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 8px; color: #888;">
+            <span>Low E-Factor</span>
+            <span>High E-Factor</span>
         </div>
     </div>
     """
@@ -336,30 +475,79 @@ def st_skulls(num_skulls=20): #Definition of a function to pop skulls if the eco
     st.markdown(skulls_html, unsafe_allow_html=True)
 
 
-if st.button("🌿 Green Metrics: Atom Economy"):
-    if len(input_data["reactants"]) > 0 and len(input_data["products"]) > 0:
+if st.button("♻️ Green Metrics: Atom Economy"):
+
+    reag_smiles_list = st.session_state.get("reag_list", [])
+    prod_smiles_list = st.session_state.get("prod_list", [])
+
+    if len(reag_smiles_list) > 0 and len(prod_smiles_list) > 0:
         try:
-            
-            ae_result = calculate_eco_atm_M(input_data)
-            
+            reactants_objects = [Chemical(smiles=s) for s in reag_smiles_list]
+            wanted_product_obj = Chemical(smiles=prod_smiles_list[0])
+            byproducts_objects = [Chemical(smiles=s) for s in prod_smiles_list[1:]]
+
+            experiment = Reaction(reactants=reactants_objects, wanted_product=wanted_product_obj, byproducts=byproducts_objects)
+            ae_result = experiment.calcul_eco_atom()
             
             display_linear_gauge(ae_result, "Atom Economy")
-            
             
             if ae_result > 90: #Congratulation message
                 st.balloons()
                 st.success("Excellent! This reaction is extremely atom-efficient.")
             elif ae_result < 40: #Warning message
                 st_skulls()
-                st.warning("Warning: this reaction produces too much waste.")
+                st.warning("⚠️ Warning: this reaction produces too much waste.")
                 
         except Exception as e:
             st.error(f"Error during the calculation: {e}")
     else:
         st.error("Please, add a reactant and a product.")
+    
 
 
+if st.button("🧮 Green Metrics: PMI"):
+    reag_smiles_list = st.session_state.get("reag_list", [])
+    prod_smiles_list = st.session_state.get("prod_list", [])
 
+    if len(reag_smiles_list) == 0 or len(prod_smiles_list) == 0:
+        st.error("Please, add a reactant and a product first.")
+    else:
+        try:
+            experiment = Reaction(reactants=[Chemical(smiles=s) for s in reag_smiles_list], wanted_product=ChemswithMass(smiles=prod_smiles_list[0], initial_mass=st.session_state.get("wanted_product_mass", 1.0)),byproducts=[Chemical(smiles=s) for s in prod_smiles_list[1:]],
+                Catalysts=[ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],extractants=[Extractant(smiles=s, volume=v) for s, v in st.session_state.get("extr_list", [])])
+            pmi_result = experiment.PMI()
 
+            display_linear_gauge_pmi(pmi_result, "PMI")
+            st.metric(label="Process Mass Intensity (PMI)", value=f"{pmi_result:.2f}")
+            if pmi_result <= 20:
+                st.balloons()
+                st.success("Fantastic! Extremely low material intensity.")
+            elif pmi_result > 100:
+                st_skulls()
+                st.warning("⚠️ High PMI: This reaction requires a significant amount of auxiliary materials (solvents/catalysts).")
+        except Exception as e:
+            st.error(f"Error during PMI calculation: {e}")
 
+if st.button("📉 Environmental Factor (E-Factor)"):
+    reag_smiles_list = st.session_state.get("reag_list", [])
+    prod_smiles_list = st.session_state.get("prod_list", [])
 
+    if len(reag_smiles_list) == 0 or len(prod_smiles_list) == 0:
+            st.error("Please, add a reactant and a product first.") 
+    else:
+        try:
+            experiment = Reaction(reactants=[Chemical(smiles=s) for s in reag_smiles_list], wanted_product=ChemswithMass(smiles=prod_smiles_list[0], initial_mass=st.session_state.get("wanted_product_mass", 1.0)),byproducts=[Chemical(smiles=s) for s in prod_smiles_list[1:]],
+                Catalysts=[ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],extractants=[Extractant(smiles=s, volume=v) for s, v in st.session_state.get("extr_list", [])])
+            ef_result= experiment.e_factor()
+
+            display_linear_gauge_efactor(ef_result, "E-Factor")
+            st.metric(label="E-Factor (kg waste / kg product)", value=f"{ef_result:.2f}")
+            if ef_result < 1.0:
+                st.balloons()
+                st.success("Excellent! This reaction generates almost zero waste.")
+            elif ef_result > 50:
+                st_skulls()
+                st.warning("⚠️ Warning: This process generates a very high amount of waste relative to the target product.")
+        except Exception as e:
+            st.error(f"Error during E-Factor calculation: {e}")
+            
