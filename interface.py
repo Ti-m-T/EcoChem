@@ -644,6 +644,8 @@ if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk asse
 
             st.subheader("Risk Assessment")
 
+            # To be implemented: risk assessment based on the GSK solvent selection guide and the hazard of the reactants and products.
+
         except Exception as e:
 
             if str(e) == "Failed to balance reaction":
@@ -651,10 +653,6 @@ if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk asse
             else:
                 st.error(f"Error during computation: {e}")
 
-
-@st.cache_data
-def cached_reaction(smiles_tuple):
-    return build_reaction()
 
 
 
