@@ -70,10 +70,10 @@ class Chemical: # Class grouping all chemicals
     
     @mass.setter
     def mass(self, value:float):
-        self._mass=value
+        self._mass = value
         
-        if self.mw>0:
-         self.moles=value/self.mw
+        if self.mw > 0:
+         self.moles = value/self.mw
 
     def get_CID(self) : # Searches for the CID of a molecule using the PubChem data base.
 
@@ -283,7 +283,7 @@ class Reaction:
     Catalysts: list[ChemswithMass] = field(default_factory = list)
     solvents: list[Solvent] = field(default_factory = list)
     extractants: list[Extractant] = field(default_factory = list)
-    Chosen_Yield: float = 1
+    Chosen_Yield: float = field(default = float(1.0))
     
     def stoich_of_reaction(self):
 
@@ -371,7 +371,7 @@ class Reaction:
         for reactant in self.reactants:
 
             reactant.moles = self.wanted_product.moles/((self.wanted_product.coeff/reactant.coeff)*self.Chosen_Yield)
-            reactant.mass = reactant.moles*reactant.mw
+            reactant.mass = reactant.moles * reactant.mw
             total_mass_reactant += reactant.mass
 
         return total_mass_reactant
@@ -384,7 +384,7 @@ class Reaction:
         for byproduct in self.byproducts:
 
             byproduct.moles = self.wanted_product.moles/((self.wanted_product.coeff/byproduct.coeff))
-            byproduct.mass = byproduct.moles*byproduct.mw
+            byproduct.mass = byproduct.moles * byproduct.mw
             total_mass_byproduct += byproduct.mass
 
         return total_mass_byproduct
@@ -397,8 +397,8 @@ class Reaction:
 
         for reactant in self.reactants:
 
-            mol_reactant_left = reactant.moles-(self.wanted_product.moles*reactant.coeff)/self.wanted_product.coeff
-            mass_reactant_left = mol_reactant_left*reactant.mw
+            mol_reactant_left = reactant.moles - (self.wanted_product.moles*reactant.coeff)/self.wanted_product.coeff
+            mass_reactant_left = mol_reactant_left * reactant.mw
             tot_mass_reactant_left += mass_reactant_left
 
         return tot_mass_reactant_left

@@ -310,14 +310,8 @@ if st.sidebar.button("🧪 Stoichiometry"):
     st.title("Stoichiometry")
     st.write("Write the chemical formula of your reactants, products and solvent to get the correct stoichiometry of the reaction!")
 
-
-
-
-
-
-
 st.subheader("Yield of reaction")
-yield_input = st.number_input("Reaction Yield [%]", value=100.0)
+yield_input = st.number_input("Reaction Yield [%]", value=100.0, step = 0.1)
 
 if yield_input<=0 or yield_input>100:
     st.warning("⚠️ Please enter a valid yield value between 0 and 100 %.")
@@ -327,27 +321,52 @@ else:
     yield_fraction = yield_input / 100
     st.success(f"Reaction yield set to {yield_input:.2f}%.")
 
+
+
 def build_reaction():
     reag_smiles_list = st.session_state.get("reag_list", [])
     prod_smiles_list = st.session_state.get("prod_list", [])
-
+    
     reactants_objects = [Chemical(smiles=s) for s in reag_smiles_list]
-    wanted_product_obj = ChemswithMass(
-        smiles=prod_smiles_list[0],
-        initial_mass=st.session_state.get("wanted_product_mass", 1.0)
-    )
+
     byproducts_objects = [Chemical(smiles=s) for s in prod_smiles_list[1:]]
 
-    return Reaction(
-        reactants=reactants_objects,
-        wanted_product=wanted_product_obj,
-        byproducts=byproducts_objects,
-        Catalysts=[ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],
-        solvents=[Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],
-        extractants=[Extractant(smiles=e["smiles"], volume=e["volume"], user_density=e["density"]) for e in st.session_state.get("extr_list", [])]
+    wanted_product_obj = ChemswithMass(
+        smiles = prod_smiles_list[0],
+        initial_mass = 1000 # For a mass of 1kg of the main product
     )
 
-if st.button("⚗️ Compute reaction stoichiometry and Green Metrics"):
+    return Reaction(
+        reactants = reactants_objects,
+        wanted_product = wanted_product_obj,
+        byproducts = byproducts_objects,
+        Catalysts = [ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],
+        solvents = [Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],
+        extractants =[Extractant(smiles=e["smiles"], volume=e["volume"], user_density=e["density"]) for e in st.session_state.get("extr_list", [])],
+        Chosen_Yield = yield_fraction  
+    )
+
+if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk assessment"):
+    
+    if len(st.session_state.get("reag_list", [])) == 0:
+        st.warning("⚠️ Please draw at least one reactant to proceed.") # Checks for reactants
+        st.stop()
+
+    elif len(st.session_state.get("prod_list", [])) == 0:
+        st.warning("⚠️ Please draw at least one product to proceed.") # Checks for products
+        st.stop()
+
+    for reactant in st.session_state.get("reag_list", []):
+        if "." in reactant:
+            index = reactant.index(".")
+            st.warning(f"⚠️ The reactant {index} seems to contain multiple SMILES. Please separate them into different input fields.") # Checks for multiple SMILES in the same input for reactants.
+            st.stop()
+
+    for product in st.session_state.get("prod_list", []):
+        if "." in product:
+            index = product.index(".")
+            st.warning(f"⚠️ The product {index} seems to contain multiple SMILES. Please separate them into different input fields.") # Checks for multiple SMILES in the same input for products.
+            st.stop()
 
     experiment = build_reaction()
 
@@ -357,11 +376,39 @@ if st.button("⚗️ Compute reaction stoichiometry and Green Metrics"):
 
     all_products_set : set = {products.smiles for products in all_products_list}
 
-    are_there_same_molecules = reactant_set & all_products_set
+    if reactant_set & all_products_set:
+        st.warning(f"⚠️ {reactant_set & all_products_set} appear both as reactants and products. Please check your input.") # Checks for the same molecule in reactants and products.
+        st.stop()
 
-    if are_there_same_molecules:
-        st.warning(f"{are_there_same_molecules}")
-        st.warning("⚠️ Warning: Some molecules appear both as reactants and products. Please check your input.")
+    def atom_set_builder(st_list_input :list[Chemical]) -> set:
+
+        atom_set = set()
+
+        list_input = [Chemical(smiles=s) for s in st_list_input]
+
+        for smiles_input in list_input:
+            molecular_formula = smiles_input.mol_f
+            atom = re.findall(r'[A-Z][a-z]?', molecular_formula) # Builds a set of the atoms present in the list of reactants or products.
+            atom_set.update(atom)
+        return atom_set
+    
+    atom_set_reactants = atom_set_builder(st.session_state.get("reag_list", []))
+
+    atom_set_products = atom_set_builder(st.session_state.get("prod_list", []))
+
+    if atom_set_reactants != atom_set_products:
+
+        diff_in_atom = atom_set_reactants ^ atom_set_products
+    
+        diff_atom_list :list[str] = []
+
+        for atom in diff_in_atom:
+
+            diff_atom_list.append(atom)
+
+            text_diff_atom = ", ".join(f'"{x}"' for x in diff_atom_list[:-1]) + f' and "{diff_atom_list[-1]}"'
+
+        st.warning(f"⚠️ Atom {text_diff_atom} appear only in the reactants or only in the products. Please check your input.") # Checks for the same atoms in reactants and products.
         st.stop()
 
     if (
@@ -595,39 +642,15 @@ if st.button("⚗️ Compute reaction stoichiometry and Green Metrics"):
             elif ae_result < 40 and ef_result >= 50 and pmi_result > 70:
                 show_skulls()
 
-                if pmi_result <= 10:    
-                    st.success("Fantastic! Low material usage.")
-
-                elif pmi_result <= 40:
-                    st.warning("⚠️ This reaction uses a moderate amount of material relative to the target product.")
-
-                elif pmi_result <= 70:
-                    st.warning("⚠️ This reaction uses a significant amount of material relative to the target product.")
-
-                else:
-                    st.error("💀 This reaction uses a very high amount of material relative to the target product.")
-
-
-                if ef_result < 1.0:
-                    st.success("Excellent! This reaction generates very little waste.")
-
-                elif ef_result < 50:
-                    st.warning("⚠️ This reaction generates a significant amount of waste relative to the target product.")
-
-                else :
-                    st.error("💀 This reaction generates a very high amount of waste relative to the target product.")
-
-                if ae_result > 90: # Congratulation message
-                    st.success("Excellent! This reaction is very atom-efficient.")
-
-                elif ae_result > 40: # Warning message
-                    st.warning("⚠️ This reaction produces a significant amount of waste.")
-
-                else : # Bad reaction message
-                    st.error(" 💀 This reaction is extremely inefficient in terms of atom economy.")
+            st.subheader("Risk Assessment")
 
         except Exception as e:
-            st.error(f"Error during computation: {e}")
+
+            if str(e) == "Failed to balance reaction":
+                st.error("⚠️ Could not balance the reaction. Please check your input for any errors.")
+            else:
+                st.error(f"Error during computation: {e}")
+
 
 @st.cache_data
 def cached_reaction(smiles_tuple):
