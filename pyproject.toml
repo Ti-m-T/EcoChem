@@ -1,0 +1,56 @@
+[build-system] 
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "EcoChem"
+version = "0.1.0"
+description = "A Python tool to compute Green Chemistry factors of a reaction."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+keywords = [
+    "Environment",
+    "Atom economy",
+    "PMI",
+    "E-factor",
+    "toxicity",
+    "optimization",
+    "ecofriendly",
+    "chemical-engineering",
+    "chemistry-lab"
+]
+
+dependencies = ["rdkit",
+    "streamlit",
+    "streamlit-ketcher",
+    "pandas",
+    "rdkit",
+    "numpy",
+    "matplotlib",
+    "requests",
+    "plotly",
+    "pillow"]
+
+authors = [{name = "Sami Meghezzi", email = sami.meghezzy@epfl.ch}, {name= "Tim Tellier", email = "tim.tellier@epfl.ch"}, {name = "Julien Tchaplyguine", email = "julien.tchaplyguine@epfl.ch}, {name = "Claudia Vittorangeli", email = "claudia.vittorangeli@epfl.ch}]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+]
+
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/Ti-m-T/Green_chem_project"
+GitHub_Tim_Tellier = "https://github.com/Ti-m-T"
+GitHub_Sami_Meghezzi = "https://github.com/Sami-Elevated/Sami-Elevated"
+GitHub_Julien_Tchaplyguine = "https://github.com/J-Tchp"
+GitHub_Claudia_Vittorangeli = "https://github.com/ClauVitt/ClauVitt"
+
+[tool.hatch.version]
+path = 
