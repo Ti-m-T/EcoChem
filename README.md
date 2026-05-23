@@ -3,7 +3,7 @@
   <img src="https://github.com/Ti-m-T/Green_chem_project/blob/dev/EcoChem.jpg" alt="EcoChem Logo" width="500">
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/coverage-82.50%25-green" alt="Coverage">&nbsp;
+  <img src="https://img.shields.io/badge/coverage-76%25-green" alt="Coverage">&nbsp;
   <img src="https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white" alt="Python">&nbsp;
   <img src="https://img.shields.io/badge/Contributors-4-orange" alt="Contributors">&nbsp;
   <img src="https://img.shields.io/badge/License-MIT-red" alt="License">
