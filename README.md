@@ -2,10 +2,7 @@
 <p align="center">
   <img src="https://github.com/Ti-m-T/Green_chem_project/blob/dev/EcoChem.jpg" alt="EcoChem Logo" width="500">
 </p>
-![Coverage](https://img.shields.io/badge/coverage-82.50%25-green)
-![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white)
-![Contributors](https://img.shields.io/badge/Contributors-4-orange)
-![License](https://img.shields.io/badge/License-MIT-red)
+![Coverage](https://img.shields.io/badge/coverage-82.50%25-green) ![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white) ![Contributors](https://img.shields.io/badge/Contributors-4-orange) ![License](https://img.shields.io/badge/License-MIT-red)
 EcoChem is a tool useful to calculate how green a reaction is by computing the atom economy, PMI and E-factor of the given reaction. It is a python based package that uses RDKIT, Streamlit, numpy and pandas.
 
 ---
@@ -52,18 +49,18 @@ If a package is missing you can install it by running
 pip install nam_of_the_package
 ```
 ## *⚡Structure*
-*Draw the reactans, solvent/catalyst and the products and click apply to visualize the smiles 
-*Add extractants by writing the IUPAC name or directly the smiles and select the volume used
-*Equilibrate the reaction and visualize it
-*Calculate the atom economy, PMI and E-factor and visualize how ecofriendly the reaction is
-*Obtain information about the toxicity of the compounds used
+* **Draw the reactans, solvent/catalyst and the products and click apply to visualize the smiles 
+* **Add extractants by writing the IUPAC name or directly the smiles and select the volume used
+* **Equilibrate the reaction and visualize it
+* **Calculate the atom economy, PMI and E-factor and visualize how ecofriendly the reaction is
+* **Obtain information about the toxicity of the compounds used
 
 ## *🖊️Autors*
 This package was made by four chemistry students at EPFL:
-*Sami Meghezzi [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/Sami-Elevated)
-*Tim Tellier [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/Ti-m-T)
-*Julien Tchaplyguine [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/J-Tchp)
-*Claudia Vittorangeli [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/ClauVitt)
+* **Sami Meghezzi [![GitHub](https://img.shields.io/badge/GitHub-Sami-Elevated-181717?style=flat&logo=github&logoColor=white)](https://github.com/Sami-Elevated)
+* **Tim Tellier [![GitHub](https://img.shields.io/badge/GitHub-Ti-m-T-181717?style=flat&logo=github&logoColor=white)](https://github.com/Ti-m-T)
+* **Julien Tchaplyguine [![GitHub](https://img.shields.io/badge/GitHub-J-Tchp-181717?style=flat&logo=github&logoColor=white)](https://github.com/J-Tchp)
+* **Claudia Vittorangeli [![GitHub](https://img.shields.io/badge/GitHub-ClauVitt-181717?style=flat&logo=github&logoColor=white)](https://github.com/ClauVitt)
 
 
 
