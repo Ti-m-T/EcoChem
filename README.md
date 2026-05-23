@@ -24,9 +24,21 @@ EcoChem is a package perfect for a first-hand chemist as well as an experienced 
 
 ---
 ## *💻Installation and set-up*
-Install the package by running
-
-
+The package can be installed in different ways.
+Install the package by running on the terminal
+```bash
+pip install ecochem
+```
+Install the package by using the URL of the GitHub repository of the project by running on the terminal
+```bash
+pip install git+https://github.com/Ti-m-T/Green_chem_project
+```
+You can also copy the repository and install the project in editable mode by following the following steps
+```bash
+git clone https://github.com/Ti-m-T/Green_chem_project
+cd EcoChem
+pip install -e .
+```
 Create a separate environement to use the package to prevent bugs
 ```bash
 conda create -n environement_name python=3.10
