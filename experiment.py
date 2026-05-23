@@ -194,33 +194,34 @@ class Chemical: # Class grouping all chemicals
         "GHS09": "Environment"
     } # We introduce a mapping between the possible GHS pictogram code and their meaning.
 
-        def search_pictograms(section): # Recursive function to search for GHS pictograms.
+        def search_pictograms(section, in_primary=False):
 
-            if isinstance(section, dict): # We ask if the section is a dictionary. 
+            if isinstance(section, dict):
 
-                for values in section.values(): # If it is a dictionary we loop through its values to find the GHS pictogram codes.
+                if section.get("TOCHeading") == "Primary Hazards": # Only look for primary hazards
+                    in_primary = True
 
-                    if isinstance(values, str): # We check if the values are strings.
+                for key, values in section.items():
 
-                        for code, name in mapping.items(): # We loop through the mapping of GHS pictogram codes and names.
+                    if in_primary and isinstance(values, str): # Search strings inside Primary Hazards
+                        for code, name in mapping.items():
 
-                            if code in values: # If we find a GHS pictogram code in the value string.
+                            if code in values:
 
-                                self.pictograms.add(name) # We add the name of the pictogram to the list of pictograms.
+                                self.pictograms.add(name)
 
                     else:
-                        search_pictograms(values) # If the values are not strings we do a recursive call on them to keep searching for GHS pictogram codes in the database.
+                        search_pictograms(values, in_primary)
 
-            elif isinstance(section, list): # We ask if the section is a list.
+            elif isinstance(section, list):
 
-                for item in section: # If it is a list we loop through its items.
+                for item in section:
 
-                    search_pictograms(item) # We do a recursive call on the items to keep searching for GHS pictogram codes in the database.
+                    search_pictograms(item, in_primary)
 
-        search_pictograms(data) # We execute the search_pictograms function on the data we got from the PubChem database of the molecule wanted.
+        search_pictograms(data)
 
         return list(self.pictograms) # We return the list of GHS pictograms found for the molecule.
-
 
 @dataclass
 class ChemswithMass(Chemical):
@@ -278,12 +279,24 @@ class Extractant(LiquidChemical): # Subclass of LiquidChemical meant for extract
 @dataclass
 class Reaction:
     reactants: list[Chemical] = field(default_factory = list) # Class that contains all reactants used in a reaction
+    
     byproducts: list[Chemical] = field(default_factory = list) # Class that contains all products used in a reaction
+    
     wanted_product: ChemswithMass = field(default_factory = lambda: ChemswithMass(smiles = ""))
+    
     Catalysts: list[ChemswithMass] = field(default_factory = list)
+    
     solvents: list[Solvent] = field(default_factory = list)
+    
     extractants: list[Extractant] = field(default_factory = list)
+    
     Chosen_Yield: float = field(default = float(1.0))
+    
+    CID : dict[str:int] = field(default_factory = dict)
+
+    GHS : dict[str:list[str]] = field(default_factory = dict)
+    
+    pictograms : dict[str:list[str]] = field(default_factory = dict)
     
     def stoich_of_reaction(self):
 
@@ -414,23 +427,22 @@ class Reaction:
 
         waste = self.total_mass_catalysts() + self.mass_reactants_left() + self.total_mass_extractants() + self.total_mass_solvents() + self.total_mass_byproducts()
         return waste/self.wanted_product.mass
-        
+                
 
-
-
-
-
-
-
-
-
-r1=Chemical(smiles="CCO")
+r1=Chemical(smiles="C")
 r2=Chemical(smiles="O=O")
-r3=Chemical(smiles="CC=O")
-p1=Chemical(smiles="CC(=O)O")
-p2=Chemical(smiles="O")
-p3=Chemical(smiles="C=O")
+p1=Chemical(smiles="O")
+p2=Chemical(smiles="C(=O)=O")
 
-react_2= Reaction(reactants=[r1, r2, r3], byproducts=[p2, p3], wanted_product=p1)
-results = react_2.calcul_eco_atom()
-print(results)
+react_2= Reaction(reactants=[r1, r2], wanted_product = p1, byproducts=[p2])
+set_1 = set()
+for i in react_2.reactants :
+    i.get_pictograms()
+    for picto in i.pictograms :
+        set_1.add(picto)
+        print(i,picto)
+for j in react_2.byproducts + [react_2.wanted_product] :
+    j.get_pictograms()
+    for picto in j.pictograms :
+        set_1.add(picto)
+        print(j,picto)

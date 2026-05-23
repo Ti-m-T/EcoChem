@@ -335,6 +335,7 @@ def build_reaction():
         smiles = prod_smiles_list[0],
         initial_mass = 1000 # For a mass of 1kg of the main product
     )
+    dict_pictograms : dict[str:list[str]]= {}
 
     return Reaction(
         reactants = reactants_objects,
@@ -343,7 +344,7 @@ def build_reaction():
         Catalysts = [ChemswithMass(smiles=s, initial_mass=m) for s, m in st.session_state.get("cat_list", [])],
         solvents = [Solvent(smiles=s, volume=v) for s, v in st.session_state.get("solv_list", [])],
         extractants =[Extractant(smiles=e["smiles"], volume=e["volume"], user_density=e["density"]) for e in st.session_state.get("extr_list", [])],
-        Chosen_Yield = yield_fraction  
+        Chosen_Yield = yield_fraction,  
     )
 
 if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk assessment"):
@@ -442,13 +443,28 @@ if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk asse
             # 3. DISPLAY STOICH
             st.subheader("⚖️ Balanced Reaction")
 
+
+ 
+            def convert_to_latex_subscripts(formula:str) -> str: # Function to format charge and subscripts in the latex
+
+                formula = re.sub(r'([A-Za-z0-9_]+)([+-]\d*)$',r'\1^{\2}',formula) # Formats the charge 
+
+                formula = re.sub(r'\^([+-]\d*)', r'__CHARGE__\1__', formula) # Protects the charges
+
+                formula = re.sub(r'([A-Za-z\)])(\d+)', r'\1_{\2}', formula) # Formats the subscripts
+
+                formula = re.sub(r'__CHARGE__([+-]\d*)__', r'^{\1}', formula) # Restore the charges
+
+                return formula
+
             def format_reaction_latex(experiment):
-                def fmt(c, f):
+
+                def format(c, f):
                     return rf"{int(round(c))}\,{convert_to_latex_subscripts(f)}"
+                
+                reactants = " + ".join(format(r.coeff, r.mol_f) for r in experiment.reactants)
 
-                reactants = " + ".join(fmt(r.coeff, r.mol_f) for r in experiment.reactants)
-
-                products = " + ".join(fmt(p.coeff, p.mol_f) for p in experiment.byproducts + [experiment.wanted_product])
+                products = " + ".join(format(p.coeff, p.mol_f) for p in [experiment.wanted_product]+ experiment.byproducts )
 
                 return rf"{reactants} \;\longrightarrow\; {products}"
             
@@ -538,8 +554,8 @@ if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk asse
             def display_linear_gauge_pmi(value, title="PMI"): #Colored bar function
                 pos = max(0, min(100, value)) #Def of min and max values
                 
-                if pos > 50: color = "#ff4b4b"   # Color of the text
-                elif pos > 80: color = "#ffa500" 
+                if pos > 80: color = "#ff4b4b"   # Color of the text
+                elif pos > 40: color = "#ffa500" 
                 else: color = "#00cc96"          
                 
                 gauge_html = f"""
@@ -587,8 +603,8 @@ if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk asse
             def display_linear_gauge_efactor(value, title="E-Factor"): #Colored bar function
                 pos = max(0, min(100, value)) #Def of min and max values
                 
-                if pos > 50: color = "#ff4b4b"   # Color of the text
-                elif pos > 80: color = "#ffa500" 
+                if pos > 80: color = "#ff4b4b"   # Color of the text
+                elif pos > 40: color = "#ffa500" 
                 else: color = "#00cc96"          
                 
                 gauge_html = f"""
@@ -644,7 +660,58 @@ if st.button("⚗️ Compute reaction stoichiometry, green metrics and risk asse
 
             st.subheader("Risk Assessment")
 
-            # To be implemented: risk assessment based on the GSK solvent selection guide and the hazard of the reactants and products.
+            set_CID : set = set()
+
+            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]: 
+                chem.get_CID()
+                set_CID.add(chem.CID)
+            
+            if set_CID == {None} :
+                st.warning("No data was found, be carefull") # In the case we cannot find any CID on pubchem we warn the user
+            
+            set_pictograms : set = set()
+
+            for chem in experiment.reactants + experiment.byproducts +[experiment.wanted_product] :
+                chem.get_pictograms()
+                for picto in chem.pictograms :
+                    set_pictograms.add(picto)
+
+            if not set_pictograms : 
+                st.success("Your reaction does not have any tox.") # If set is empty we return a no toxcicity message
+
+            GHS_pictograms :dict ={"Exploding bomb" : "GHS_Exploding_bomb.png",
+                                   "Flame" : "GHS_Flame.png",
+                                   "Oxidizer (flame over circle)" : "GHS_Oxidizer.png",
+                                   "Gas cylinder" : "GHS_Gas_cylinder.png",
+                                   "Corrosion" : "GHS_Corrosion.png",
+                                   "Skull and crossbones" : "GHS_Skull.png",
+                                   "Exclamation mark" : "GHS_Exclamation_mark.png",
+                                   "Health hazard" : "GHS_Health_hazard.png",
+                                   "Environment" : "GHS_Environment.png"}
+            
+            cols=st.columns(len(set_pictograms))
+            st.write(set_pictograms)
+
+            for col, picto in zip(cols,set_pictograms) :
+                col.image(GHS_pictograms[picto], width=90)
+                col.caption(picto.capitalize())
+
+            
+
+
+            
+            
+            
+
+
+
+
+
+
+
+
+
+
 
         except Exception as e:
 
