@@ -2,4 +2,70 @@
 <p align="center">
   <img src="https://github.com/Ti-m-T/Green_chem_project/blob/dev/EcoChem.jpg" alt="EcoChem Logo" width="500">
 </p>
+![Coverage](https://img.shields.io/badge/coverage-82.50%25-green)
+![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python&logoColor=white)
+![Contributors](https://img.shields.io/badge/Contributors-4-orange)
+![License](https://img.shields.io/badge/License-MIT-red)
 EcoChem is a tool useful to calculate how green a reaction is by computing the atom economy, PMI and E-factor of the given reaction. It is a python based package that uses RDKIT, Streamlit, numpy and pandas.
+
+---
+## *📄About the package*
+With EcoChem it is possible to study how environmentally friendly a reaction is. It all starts by defining a reaction in terms of reagents, products, solvent/catalysts and extractants. Firstly, the SMILES of the participants are obtained: the reagents, solvent/catalyst and products are drawn while the SMILES of the extractants are directly searched on PubChem by typing the name of the compound. 
+
+Once the SMILES are obtained the reaction is equilibrated and can be visualized. 
+
+Finally, the atom economy, PMI and E-factor are calculated and the reaction is classified according to the three factors.
+
+Because a reaction should be eco-friendly but also health-friendly, the toxicity of each participant is displayed to have a complete analysis of the safety of the reaction.
+
+EcoChem is a package perfect for a first-hand chemist as well as an experienced chemist, as it permits to be more self-aware of what we do in the lab.
+
+---
+## *💻Installation and set-up*
+Install the package by running
+
+
+Create a separate environement to use the package to prevent bugs
+```bash
+conda create -n environement_name python=3.10
+conda activate
+```
+## *📦Required packages*
+EcoChem uses the following packages, make sure to have them
+```bash
+rdkit
+pandas
+numpy
+matplotlib
+requests
+os
+re
+plotly
+PIL
+```
+If you are not sure which package you have or not write on your terminal
+```bash
+conda list 
+```
+If a package is missing you can install it by running
+```bash
+pip install nam_of_the_package
+```
+## *⚡Structure*
+*Draw the reactans, solvent/catalyst and the products and click apply to visualize the smiles 
+*Add extractants by writing the IUPAC name or directly the smiles and select the volume used
+*Equilibrate the reaction and visualize it
+*Calculate the atom economy, PMI and E-factor and visualize how ecofriendly the reaction is
+*Obtain information about the toxicity of the compounds used
+
+## *🖊️Autors*
+This package was made by four chemistry students at EPFL:
+*Sami Meghezzi [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/Sami-Elevated)
+*Tim Tellier [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/Ti-m-T)
+*Julien Tchaplyguine [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/J-Tchp)
+*Claudia Vittorangeli [![GitHub](https://img.shields.io/badge/GitHub-mlacrx-181717?style=flat&logo=github&logoColor=white)](https://github.com/ClauVitt)
+
+
+
+
+
