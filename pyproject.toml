@@ -32,7 +32,7 @@ dependencies = ["rdkit",
     "plotly",
     "pillow"]
 
-authors = [{name = "Sami Meghezzi", email = "sami.meghezzy@epfl.ch"}, {name= "Tim Tellier", email = "tim.tellier@epfl.ch"}, {name = "Julien Tchaplyguine", email = "julien.tchaplyguine@epfl.ch}, {name = "Claudia Vittorangeli", email = "claudia.vittorangeli@epfl.ch"}]
+authors = [{name = "Sami Meghezzi", email = "sami.meghezzy@epfl.ch"}, {name= "Tim Tellier", email = "tim.tellier@epfl.ch"}, {name = "Julien Tchaplyguine", email = "julien.tchaplyguine@epfl.ch"}, {name = "Claudia Vittorangeli", email = "claudia.vittorangeli@epfl.ch"}]
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -43,7 +43,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 
-dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://github.com/Ti-m-T/Green_chem_project"
@@ -53,7 +52,7 @@ GitHub_Julien_Tchaplyguine = "https://github.com/J-Tchp"
 GitHub_Claudia_Vittorangeli = "https://github.com/ClauVitt/ClauVitt"
 
 [tool.hatch.version]
-path = "https://github.com/Ti-m-T/Green_chem_project/blob/main/src/__init__.py"
+path = ""src/__init__.py""
 
 [tool.hatch.build]
 sources = ["src"]
