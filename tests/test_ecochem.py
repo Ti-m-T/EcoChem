@@ -245,6 +245,49 @@ def test_evaluer_exp_invalid():
 
     with pytest.raises(ValueError):
         evaluer_exp("@@@")
- 
 
+#----------------------------
+# Test interface 
+#----------------------------
+def test_get_CID_valid():
+    chem = Chemical(smiles="C")
+    cid = chem.get_CID()
+    assert cid == 297
 
+def test_get_CID_invalid():
+    chem = Chemical(smiles="not_a_smiles")
+    cid = chem.get_CID()
+    assert cid is None
+
+def test_GHS_empty(monkeypatch):
+    chem = Chemical(smiles="C")
+
+    monkeypatch.setattr(chem, "get_GHS", lambda: None)
+    chem.GHS = {}
+
+    chem.get_pictograms()
+    assert chem.pictograms == []
+
+def test_GHS_normal():
+    chem = Chemical(smiles="C")
+    chem.get_CID()
+    chem.get_GHS()
+
+    assert isinstance(chem.GHS, dict) 
+
+def test_solvent_structure():
+    item = {
+        "role": "solvent",
+        "volume": 10,
+        "density": 1.0
+    }
+
+    assert item["volume"] > 0
+
+def test_catalyst_branch():
+    item = {
+        "role": "catalyst",
+        "mass": 1.0
+    }
+
+    assert item["mass"] > 0
