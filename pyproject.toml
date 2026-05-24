@@ -45,7 +45,7 @@ classifiers = [
 
 
 [project.urls]
-Homepage = "https://github.com/Ti-m-T/Green_chem_project"
+Homepage = "https://github.com/Ti-m-T/EcoChem"
 GitHub_Tim_Tellier = "https://github.com/Ti-m-T"
 GitHub_Sami_Meghezzi = "https://github.com/Sami-Elevated/Sami-Elevated"
 GitHub_Julien_Tchaplyguine = "https://github.com/J-Tchp"
