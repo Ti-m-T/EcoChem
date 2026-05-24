@@ -48,13 +48,11 @@ conda activate
 EcoChem uses the following packages, make sure to have them
 ```bash
 rdkit
-pandas
-numpy
-matplotlib
 requests
-plotly
 Pillow
 pubchempy
+plotly
+tomlkit
 thermo
 simpy
 streamlit 
