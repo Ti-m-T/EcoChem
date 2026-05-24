@@ -25,12 +25,18 @@ dependencies = ["rdkit",
     "streamlit",
     "streamlit-ketcher",
     "pandas",
-    "rdkit",
     "numpy",
     "matplotlib",
     "requests",
     "plotly",
-    "pillow"]
+    "pillow",
+    "simpy",
+    "thermo",
+    "pubchempy"
+    ]
+[project.optional-dependencies]
+tests = ["pytest",
+        "pytest-cov"]
 
 authors = [{name = "Sami Meghezzi", email = "sami.meghezzy@epfl.ch"}, {name= "Tim Tellier", email = "tim.tellier@epfl.ch"}, {name = "Julien Tchaplyguine", email = "julien.tchaplyguine@epfl.ch"}, {name = "Claudia Vittorangeli", email = "claudia.vittorangeli@epfl.ch"}]
 
