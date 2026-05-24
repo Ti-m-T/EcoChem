@@ -19,6 +19,8 @@ from experiment import Chemical
 from experiment import ChemswithMass
 from experiment import Solvent
 from experiment import Extractant
+from experiment import LiquidChemical
+
 
 
 def make_id():
@@ -294,6 +296,45 @@ def display_linear_gauge_efactor(value, title="E-Factor"):
     </div>
     """
     st.markdown(gauge_html, unsafe_allow_html=True)
+
+# -----------------------------
+# Toxcicity functions
+# -----------------------------
+def render_chemicals(title, chem_list):
+    st.markdown(f"#### {title}")
+
+    for chem in chem_list:
+        chem.get_CID()
+
+        if chem.CID is None:
+            st.warning(f"No data was found for {chem.smiles}.")
+            continue
+
+        chem.get_GHS()
+        chem.get_pictograms()
+
+        list_picto = list(chem.pictograms)
+        list_GHS = list(chem.GHS.keys())
+
+        if not list_GHS:
+            text_GHS = "No hazard statements available"
+        elif len(list_GHS) == 1:
+            text_GHS = f'"{list_GHS[0]}"'
+        else:
+            text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+
+        st.warning(
+            f"⚠️ [{chem.smiles}] hazards: {text_GHS}"
+        )
+
+        for i in range(0, len(list_picto), 3):
+            row = list_picto[i:i+3]
+            cols = st.columns(3)
+
+            for col, picto in zip(cols, row):
+                img_path = GHS_pictograms.get(picto)
+                if img_path:
+                    col.image(img_path, width=100)
 
 
 # -----------------------------
@@ -723,9 +764,8 @@ elif st.session_state.page_active == "Compute":
                 show_skulls()
 
             st.subheader("Risk Assessment")
-
-            set_CID = set()
-            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]:
+            set_CID : set = set()
+            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]+ experiment.Catalysts + experiment.solvents + experiment.extractants:
                 chem.get_CID()
                 set_CID.add(chem.CID)
 
@@ -733,7 +773,7 @@ elif st.session_state.page_active == "Compute":
                 st.warning("No hazard data found.")
 
             set_pictograms = set()
-            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]:
+            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]+ experiment.Catalysts + experiment.solvents + experiment.extractants:
                 chem.get_pictograms()
                 for picto in chem.pictograms:
                     set_pictograms.add(picto)
@@ -741,7 +781,7 @@ elif st.session_state.page_active == "Compute":
             if not set_pictograms:
                 st.success("No hazard pictograms found.")
             else:
-                st.error("This reaction involves hazardous substances.")
+                st.warning("⚠️ This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
 
                 GHS_pictograms = {
                     "Exploding bomb": "GHS_Exploding_bomb.png",
@@ -756,14 +796,35 @@ elif st.session_state.page_active == "Compute":
                 }
 
                 pictos = list(set_pictograms)
+                
                 for i in range(0, len(pictos), 3):
                     cols = st.columns(3)
+
                     for col, picto in zip(cols, pictos[i:i+3]):
                         img_path = GHS_pictograms.get(picto)
+
                         if img_path:
                             col.image(img_path, width=100)
+
                         else:
                             col.write(picto)
 
+                st.markdown("---")
+                st.subheader("💀 Toxicity of specific species")
+
+                render_chemicals("Reactants toxicity", experiment.reactants)
+
+                render_chemicals("Products toxicity", [experiment.wanted_product] + experiment.byproducts)
+
+                if experiment.solvents:
+                    render_chemicals("Solvent toxicity", experiment.solvents)
+
+                if experiment.Catalysts:
+                    render_chemicals("Catalysts toxicity", experiment.Catalysts)
+
+                if experiment.extractants:
+                    render_chemicals("Extractants toxicity", experiment.extractants)
+            
         except Exception as e:
-            st.error(f"Error during computation: {e}")
+            st.error(f"Error during computation details: {e}")
+
