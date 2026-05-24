@@ -194,30 +194,32 @@ class Chemical: # Class grouping all chemicals
         "GHS09": "Environment"
     } # We introduce a mapping between the possible GHS pictogram code and their meaning.
 
-        def search_pictograms(section): # Recursive function to search for GHS pictograms.
+        def search_pictograms(section, in_primary=False):
 
-            if isinstance(section, dict): # We ask if the section is a dictionary. 
+            if isinstance(section, dict):
 
-                for values in section.values(): # If it is a dictionary we loop through its values to find the GHS pictogram codes.
+                if section.get("TOCHeading") == "Primary Hazards": # Only look for primary hazards
+                    in_primary = True
 
-                    if isinstance(values, str): # We check if the values are strings.
+                for key, values in section.items():
 
-                        for code, name in mapping.items(): # We loop through the mapping of GHS pictogram codes and names.
+                    if in_primary and isinstance(values, str): # Search strings inside Primary Hazards
+                        for code, name in mapping.items():
 
-                            if code in values: # If we find a GHS pictogram code in the value string.
+                            if code in values:
 
-                                self.pictograms.add(name) # We add the name of the pictogram to the list of pictograms.
+                                self.pictograms.add(name)
 
                     else:
-                        search_pictograms(values) # If the values are not strings we do a recursive call on them to keep searching for GHS pictogram codes in the database.
+                        search_pictograms(values, in_primary)
 
-            elif isinstance(section, list): # We ask if the section is a list.
+            elif isinstance(section, list):
 
-                for item in section: # If it is a list we loop through its items.
+                for item in section:
 
-                    search_pictograms(item) # We do a recursive call on the items to keep searching for GHS pictogram codes in the database.
+                    search_pictograms(item, in_primary)
 
-        search_pictograms(data) # We execute the search_pictograms function on the data we got from the PubChem database of the molecule wanted.
+        search_pictograms(data)
 
         return list(self.pictograms) # We return the list of GHS pictograms found for the molecule.
 
