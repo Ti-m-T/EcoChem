@@ -25,15 +25,13 @@ keywords = [
 dependencies = ["rdkit",
     "streamlit",
     "streamlit-ketcher",
-    "pandas",
-    "numpy",
-    "matplotlib",
+    "tomlkit",
     "requests",
     "plotly",
     "Pillow",
     "simpy",
     "thermo",
-    "pubchempy"
+    "pubchempy",
     ]
 
 classifiers = [
