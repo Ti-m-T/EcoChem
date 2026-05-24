@@ -107,8 +107,8 @@ def build_reaction():
             for s, m in st.session_state.get("cat_list", [])
         ],
         solvents=[
-            Solvent(smiles=s, volume=v)
-            for s, v in st.session_state.get("solv_list", [])
+            Solvent(smiles=s, volume=v, user_density=d )
+            for s, v, d in st.session_state.get("solv_list", [])
         ],
         extractants=[
             Extractant(
@@ -394,16 +394,24 @@ elif st.session_state.page_active == "Reaction Builder":
             drawn = st_ketcher(key=f"drawn_solvent_{i}")
 
             if role == "Solvent":
+
                 vol = st.number_input(
                     f"Volume (mL) for Solvent {i+1}",
-                    min_value=0.0,
-                    step=1.0,
+                    min_value = 0.0,
+                    step = 1.0,
                     key=f"vol_solv_{i}",
                 )
+
+                extr_density = st.number_input(
+                                "Density (g/mL)", 
+                                min_value=0.0, 
+                                step=0.1, 
+                                key=f"input_density_{i}"
+    )
             else:
                 mass = st.number_input(
                     f"Mass (g) for Catalyst {i+1}",
-                    min_value=0.0,
+                    min_value= 0.0 ,
                     step=0.1,
                     key=f"mass_cat_{i}",
                 )
@@ -418,7 +426,7 @@ elif st.session_state.page_active == "Reaction Builder":
             if smiles:
                 st.success(f"**SMILES {role} {i+1}:** `{smiles}`")
                 if role == "Solvent":
-                    solv_list.append((smiles, vol))
+                    solv_list.append((smiles, vol,extr_density))
                 else:
                     cat_list.append((smiles, mass))
             else:
@@ -541,20 +549,24 @@ elif st.session_state.page_active == "Reaction Builder":
                 reagents = [
                     Chem.MolFromSmiles(s) for s in st.session_state.reag_list if s
                 ]
+                st.info(reagents)
                 solvents = [
                     Chem.MolFromSmiles(item[0])
                     for item in st.session_state.solv_list
                     + st.session_state.cat_list
                 ]
+                st.info(solvents)
                 products = [
                     Chem.MolFromSmiles(s) for s in st.session_state.prod_list if s
                 ]
+                st.info(products)
                 rxn = AllChem.ChemicalReaction()
 
                 for m in reagents:
                     if m:
                         AllChem.Compute2DCoords(m)
                         rxn.AddReactantTemplate(m)
+                        
                 for m in solvents:
                     if m:
                         AllChem.Compute2DCoords(m)
@@ -563,7 +575,6 @@ elif st.session_state.page_active == "Reaction Builder":
                     if m:
                         AllChem.Compute2DCoords(m)
                         rxn.AddProductTemplate(m)
-
                 img = Draw.ReactionToImage(rxn, subImgSize=(400, 400), useSVG=False)
 
                 st.image(img, use_container_width=True)
@@ -790,6 +801,57 @@ elif st.session_state.page_active == "Compute":
                     st.balloons()
                 elif ae_result < 40 and ef_result >= 50 and pmi_result > 70:
                     show_skulls()
+
+                st.subheader("Risk Assessment")
+
+                set_CID : set = set()
+
+                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]: 
+                    chem.get_CID()
+                    set_CID.add(chem.CID)
+                
+                if set_CID == {None} :
+                    st.warning("No data was found, be carefull") # In the case we cannot find any CID on pubchem we warn the user
+                
+                set_pictograms : set = set()
+
+                for chem in experiment.reactants + experiment.byproducts +[experiment.wanted_product] :
+                    chem.get_pictograms()
+                    for picto in chem.pictograms :
+                        set_pictograms.add(picto)
+
+                if not set_pictograms : 
+                    st.success("Your reaction does not have any tox.") # If set is empty we return a no toxcicity message
+                
+                st.error("This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
+
+                GHS_pictograms :dict ={"Exploding bomb" : "GHS_Exploding_bomb.png",
+                                    "Flame" : "GHS_Flame.png",
+                                    "Oxidizer (flame over circle)" : "GHS_Oxidizer.png",
+                                    "Gas cylinder" : "GHS_Gas_cylinder.png",
+                                    "Corrosion" : "GHS_Corrosion.png",
+                                    "Skull and crossbones" : "GHS_Skull.png",
+                                    "Exclamation mark" : "GHS_Exclamation_mark.png",
+                                    "Health hazard" : "GHS_Health_hazard.png",
+                                    "Environment" : "GHS_Environment.png"}
+                
+                cols=st.columns(len(set_pictograms))
+
+                list_set_pictograms = list(set_pictograms)
+            
+                for i in range(0, len(list_set_pictograms), 3):
+                        row = list_set_pictograms[i:i+3]
+                        cols = st.columns(3)
+
+                        for col, picto in zip(cols, row):
+                            img_path = GHS_pictograms.get(picto)
+
+                            if img_path:
+                                col.image(img_path, width=100)
+                                
+                            else:
+                                col.write(picto)
+
 
             except Exception as e:
                 st.error(f"Error during computation details: {e}")
