@@ -502,6 +502,7 @@ elif st.session_state.page_active == "Reaction Builder":
 
     if st.button("➕ Add Product"):
         st.session_state.prod_list.append({"id": make_id(), "smiles": ""})
+        
 
     for i, item in enumerate(st.session_state.prod_list):
         pid = item["id"]
@@ -532,6 +533,7 @@ elif st.session_state.page_active == "Reaction Builder":
     # -----------------------------
     # Generate Reaction SMILES
     # -----------------------------
+
     if st.button("🚀 Generate Reaction SMILES"):
 
         reag_str = ".".join(
@@ -859,9 +861,6 @@ elif st.session_state.page_active == "Compute":
 
             from pathlib import Path
 
-            BASE_DIR = Path(__file__).resolve().parents[2]
-            ASSETS_DIR = BASE_DIR / "assets"
-            st.write(ASSETS_DIR)
             set_pictograms = set()
             for chem in (
                 experiment.reactants
