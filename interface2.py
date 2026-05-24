@@ -577,18 +577,15 @@ elif st.session_state.page_active == "Reaction Builder":
             rxn = AllChem.ChemicalReaction()
 
             for m in reag_mols:
-                if m:
-                    AllChem.Compute2DCoords(m)
+                if m:            
                     rxn.AddReactantTemplate(m)
 
             for m in solv_mols:
-                if m:
-                    AllChem.Compute2DCoords(m)
+                if m:           
                     rxn.AddAgentTemplate(m)
 
             for m in prod_mols:
-                if m:
-                    AllChem.Compute2DCoords(m)
+                if m:  
                     rxn.AddProductTemplate(m)
 
             img = Draw.ReactionToImage(rxn, subImgSize=(400, 400), useSVG=False)
@@ -824,6 +821,9 @@ elif st.session_state.page_active == "Compute":
 
                 if experiment.extractants:
                     render_chemicals("Extractants toxicity", experiment.extractants)
+                
+                st.info("The analysis of your reaction is done!")
+                st.balloons()
             
         except Exception as e:
             st.error(f"Error during computation details: {e}")
