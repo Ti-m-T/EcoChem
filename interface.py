@@ -346,9 +346,10 @@ elif st.session_state.page_active == "Reaction Builder":
             elif drawn and drawn.strip():
                 smiles = drawn.strip()
             else:
-                smiles = None
+                smiles = st.session_state.get(f"saved_reag_{i}", None)
 
             if smiles:
+                st.session_state[f"saved_reag_{i}"]=smiles
                 st.success(f"**SMILES Reagent {i+1}:** `{smiles}`")
                 reag_list.append(smiles)
             else:
@@ -421,9 +422,10 @@ elif st.session_state.page_active == "Reaction Builder":
             elif drawn and drawn.strip():
                 smiles = drawn.strip()
             else:
-                smiles = None
+                smiles = st.session_state.get(f"saved_solv_{i}", None)
 
             if smiles:
+                st.session_state[f"saved_solv_{i}"]=smiles
                 st.success(f"**SMILES {role} {i+1}:** `{smiles}`")
                 if role == "Solvent":
                     solv_list.append((smiles, vol,extr_density))
@@ -471,9 +473,10 @@ elif st.session_state.page_active == "Reaction Builder":
             elif drawn and drawn.strip():
                 smiles = drawn.strip()
             else:
-                smiles = None
+                smiles=st.session_state.get(f"saved_prod_{i}", None)
 
             if smiles:
+                st.session_state[f"saved_prod_{i}"]=smiles
                 st.success(f"**SMILES {prod_labels[i]}:** `{smiles}`")
                 prod_list.append(smiles)
             else:
