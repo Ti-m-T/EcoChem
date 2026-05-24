@@ -292,9 +292,6 @@ if st.sidebar.button("⚛️ Reaction Builder"):
 if st.sidebar.button("🧪 Compute"):
     go_to("Compute")
 
-if st.sidebar.button("💀 Species toxicity"):
-    go_to("💀 Species toxicity")
-
 if st.session_state.page_active == "Home":
     st.title("🍃 EcoChem: Green Chemistry Calculator")
     st.markdown("""
@@ -571,16 +568,17 @@ elif st.session_state.page_active == "Reaction Builder":
 
                 for m in reagents:
                     if m:
-                        AllChem.Compute2DCoords(m)
+                        
                         rxn.AddReactantTemplate(m)
+                        
                         
                 for m in solvents:
                     if m:
-                        AllChem.Compute2DCoords(m)
+                        
                         rxn.AddAgentTemplate(m)
                 for m in products:
                     if m:
-                        AllChem.Compute2DCoords(m)
+                        
                         rxn.AddProductTemplate(m)
                 img = Draw.ReactionToImage(rxn, subImgSize=(400, 400), useSVG=False)
 
@@ -882,6 +880,7 @@ elif st.session_state.page_active == "Compute":
 
                 st.markdown("---")
                 st.subheader("💀 Toxicity of specific species")
+                st.markdown("#### Reactant toxicity ")
 
 
                 for chem in experiment.reactants :
@@ -889,11 +888,12 @@ elif st.session_state.page_active == "Compute":
                     list_GHS : list[str] = []
                     text_GHS : str = ""
                     
-                    if chem.CID == None : 
+                    if chem.CID is None : 
                         st.warning (f"No data was found for {chem.smiles}.")
                     else : 
                         chem.get_GHS()
                         chem.get_pictograms()
+                        list_picto : list[str] = list(chem.pictograms)
                         for key,value in chem.GHS.items() :
                             list_GHS.append(key)
                         text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
@@ -901,18 +901,9 @@ elif st.session_state.page_active == "Compute":
                                     f"⚠️ [{chem.smiles}] is associated with the following hazards: "
                                     f"{text_GHS}. See the GHS pictograms below."
                                     )
-                        list_picto : list[str] = chem.pictograms
+                        
 
-                        GHS_pictograms :dict ={"Exploding bomb" : "GHS_Exploding_bomb.png",
-                                    "Flame" : "GHS_Flame.png",
-                                    "Oxidizer (flame over circle)" : "GHS_Oxidizer.png",
-                                    "Gas cylinder" : "GHS_Gas_cylinder.png",
-                                    "Corrosion" : "GHS_Corrosion.png",
-                                    "Skull and crossbones" : "GHS_Skull.png",
-                                    "Exclamation mark" : "GHS_Exclamation_mark.png",
-                                    "Health hazard" : "GHS_Health_hazard.png",
-                                    "Environment" : "GHS_Environment.png"}
-
+                     
                         for i in range(0, len(list_picto), 3):
                             row = list_picto[i:i+3]
                             cols = st.columns(3)
@@ -922,14 +913,133 @@ elif st.session_state.page_active == "Compute":
 
                                 if img_path:
                                     col.image(img_path, width=100)
+
+                st.markdown("#### Products toxicity ")
+                for chem in [experiment.wanted_product] + experiment.byproducts :
+                    chem.get_CID()
+                    list_GHS : list[str] = []
+                    text_GHS : str = ""
                     
+                    if chem.CID is None : 
+                        st.warning (f"No data was found for {chem.smiles}.")
+                    else : 
+                        chem.get_GHS()
+                        chem.get_pictograms()
+                        list_picto : list[str] = list(chem.pictograms)
+                        for key,value in chem.GHS.items() :
+                            list_GHS.append(key)
+                        text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+                        st.warning(
+                                    f"⚠️ [{chem.smiles}] is associated with the following hazards: "
+                                    f"{text_GHS}. See the GHS pictograms below."
+                                    )
+                        
+                        for i in range(0, len(list_picto), 3):
+                            row = list_picto[i:i+3]
+                            cols = st.columns(3)
 
+                            for col, picto in zip(cols, row):
+                                img_path = GHS_pictograms.get(picto)
+
+                                if img_path:
+                                    col.image(img_path, width=100)
                 
+                if experiment.solvents :
+                    st.markdown("#### Solvent toxicity")
+                    for chem in experiment.solvents:
+                        chem.get_CID()
+                        list_GHS : list[str] = []
+                        text_GHS : str = ""
+                        
+                        if chem.CID is None : 
+                            st.warning (f"No data was found for {chem.smiles}.")
+                        else : 
+                            chem.get_GHS()
+                            chem.get_pictograms()
+                            list_picto : list[str] = list(chem.pictograms)
+                            for key,value in chem.GHS.items() :
+                                list_GHS.append(key)
+                            text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+                            st.warning(
+                                        f"⚠️ [{chem.smiles}] is associated with the following hazards: "
+                                        f"{text_GHS}. See the GHS pictograms below."
+                                        )
+                            
+                            for i in range(0, len(list_picto), 3):
+                                row = list_picto[i:i+3]
+                                cols = st.columns(3)
 
+                                for col, picto in zip(cols, row):
+                                    img_path = GHS_pictograms.get(picto)
+
+                                    if img_path:
+                                        col.image(img_path, width=100)
+
+                if experiment.Catalysts :
+                    st.markdown("#### Catalysts toxicity")
+                    for chem in experiment.Catalysts:
+                        chem.get_CID()
+                        list_GHS : list[str] = []
+                        text_GHS : str = ""
+                        
+                        if chem.CID is None : 
+                            st.warning (f"No data was found for {chem.smiles}.")
+                        else : 
+                            chem.get_GHS()
+                            chem.get_pictograms()
+                            list_picto : list[str] = list(chem.pictograms)
+                            for key,value in chem.GHS.items() :
+                                list_GHS.append(key)
+                            text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+                            st.warning(
+                                        f"⚠️ [{chem.smiles}] is associated with the following hazards: "
+                                        f"{text_GHS}. See the GHS pictograms below."
+                                        )
+                            
+                            for i in range(0, len(list_picto), 3):
+                                row = list_picto[i:i+3]
+                                cols = st.columns(3)
+
+                                for col, picto in zip(cols, row):
+                                    img_path = GHS_pictograms.get(picto)
+
+                                    if img_path:
+                                        col.image(img_path, width=100)
+
+                if experiment.extractants :
+                    st.markdown("#### Extractants toxicity")
+                    for chem in experiment.extractants:
+                        chem.get_CID()
+                        list_GHS : list[str] = []
+                        text_GHS : str = ""
+                        
+                        if chem.CID is None : 
+                            st.warning (f"No data was found for {chem.smiles}.")
+                        else : 
+                            chem.get_GHS()
+                            chem.get_pictograms()
+                            list_picto : list[str] = list(chem.pictograms)
+                            for key,value in chem.GHS.items() :
+                                list_GHS.append(key)
+                            text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+                            st.warning(
+                                        f"⚠️ [{chem.smiles}] is associated with the following hazards: "
+                                        f"{text_GHS}. See the GHS pictograms below."
+                                        )
+                            
+                            for i in range(0, len(list_picto), 3):
+                                row = list_picto[i:i+3]
+                                cols = st.columns(3)
+
+                                for col, picto in zip(cols, row):
+                                    img_path = GHS_pictograms.get(picto)
+
+                                    if img_path:
+                                        col.image(img_path, width=100)
+            
             except Exception as e:
                 st.error(f"Error during computation details: {e}")
 
-elif st.session_state.page_active == "💀 Species toxicity":
-    st.title("💀 Species toxicity")
+
 
     
