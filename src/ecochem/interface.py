@@ -386,6 +386,8 @@ if st.session_state.page_active == "Home":
 # -----------------------------
 elif st.session_state.page_active == "Reaction Builder":
 
+    st.warning("⚠️ Warning, for large molecules with multiple charge please use the smiles input.")
+
     st.title("⚛️ Reaction Builder")
 
     # -----------------------------

@@ -33,7 +33,7 @@ pip install git+https://github.com/Ti-m-T/EcoChem
 You can also copy the repository and install the project in editable mode by following the following steps
 ```bash
 git clone https://github.com/Ti-m-T/EcoChem
-cd ecochem
+cd EcoChem
 pip install -e .
 ```
 Create a separate environement to use the package to prevent bugs
