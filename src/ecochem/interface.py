@@ -494,13 +494,17 @@ elif st.session_state.page_active == "Reaction Builder":
 
     if st.button("➕ Add Product"):
         st.session_state.prod_list.append({"id": make_id(), "smiles": ""})
+        
 
     for i, item in enumerate(st.session_state.prod_list):
         pid = item["id"]
-        with st.expander(f"Product {i+1}", expanded=True):
+
+        product_name = "Main product" if i == 0 else f"Product {i+1}"
+
+        with st.expander(product_name, expanded=True):
 
             typed = st.text_input(
-                f"SMILES for Product {i+1}",
+                f"SMILES for Product {product_name}",
                 key=f"typed_prod_{pid}",
                 value=item["smiles"],
             )
@@ -512,7 +516,7 @@ elif st.session_state.page_active == "Reaction Builder":
                 item["smiles"] = drawn.strip()
                 
             if item["smiles"]:
-             st.success(f"Product {i+1} added: `{item['smiles']}`")
+             st.success(f"{product_name} added: `{item['smiles']}`")
 
             if st.button("❌ Remove", key=f"remove_prod_{pid}"):
                 st.session_state.prod_list.pop(i)
@@ -523,6 +527,7 @@ elif st.session_state.page_active == "Reaction Builder":
     # -----------------------------
     # Generate Reaction SMILES
     # -----------------------------
+
     if st.button("🚀 Generate Reaction SMILES"):
 
         reag_str = ".".join([item["smiles"] for item in st.session_state.reag_list if item["smiles"]])
@@ -770,9 +775,6 @@ elif st.session_state.page_active == "Compute":
 
             from pathlib import Path
 
-            BASE_DIR = Path(__file__).resolve().parents[2]
-            ASSETS_DIR = BASE_DIR / "assets"
-            st.write(ASSETS_DIR)
             set_pictograms = set()
             for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]+ experiment.Catalysts + experiment.solvents + experiment.extractants:
                 chem.get_pictograms()
@@ -785,15 +787,15 @@ elif st.session_state.page_active == "Compute":
                 st.warning("⚠️ This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
 
                 GHS_pictograms = {
-                    "Exploding bomb": "../../assets/GHS_Exploding_bomb.png",
-                    "Flame": "../../assets/GHS_Flame.png",
-                    "Oxidizer (flame over circle)": "../../assets/GHS_Oxidizer.png",
-                    "Gas cylinder": "../../assets/GHS_Gas_cylinder.png",
-                    "Corrosion": "../../assets/GHS_Corrosion.png",
-                    "Skull and crossbones": "../../assets/GHS_Skull.png",
-                    "Exclamation mark": "../../assets/GHS_Exclamation_mark.png",
-                    "Health hazard": "../../assets/GHS_Health_hazard.png",
-                    "Environment": "../../assets/GHS_Environment.png",
+                    "Exploding bomb": "../assets/GHS_Exploding_bomb.png",
+                    "Flame": "../assets/GHS_Flame.png",
+                    "Oxidizer (flame over circle)": "../assets/GHS_Oxidizer.png",
+                    "Gas cylinder": "../assets/GHS_Gas_cylinder.png",
+                    "Corrosion": "../assets/GHS_Corrosion.png",
+                    "Skull and crossbones": "../assets/GHS_Skull.png",
+                    "Exclamation mark": "../assets/GHS_Exclamation_mark.png",
+                    "Health hazard": "../assets/GHS_Health_hazard.png",
+                    "Environment": "../assets/GHS_Environment.png",
                 }
 
                 pictos = list(set_pictograms)
