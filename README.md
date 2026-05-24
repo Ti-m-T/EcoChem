@@ -53,7 +53,6 @@ Pillow
 pubchempy
 plotly
 tomlkit
-thermo
 simpy
 streamlit 
 streamlit-ketcher
