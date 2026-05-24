@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://github.com/Ti-m-T/EcoChem/blob/main/EcoChem_loc.jpg" alt="EcoChem Logo" width="500">
+  <img src="https://github.com/Ti-m-T/EcoChem/blob/main/assets/EcoChem_loc.jpg" alt="EcoChem Logo" width="500">
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/coverage-76%25-green" alt="Coverage">&nbsp;
