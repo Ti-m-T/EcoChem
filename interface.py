@@ -809,7 +809,7 @@ elif st.session_state.page_active == "Compute":
 
                 set_CID : set = set()
 
-                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]: 
+                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product] + experiment.Catalysts + experiment.solvents + experiment.extractants: 
                     chem.get_CID()
                     set_CID.add(chem.CID)
                 
@@ -818,7 +818,7 @@ elif st.session_state.page_active == "Compute":
                 
                 set_pictograms : set = set()
 
-                for chem in experiment.reactants + experiment.byproducts +[experiment.wanted_product] :
+                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product] + experiment.Catalysts + experiment.solvents + experiment.extractants: 
                     chem.get_pictograms()
                     for picto in chem.pictograms :
                         set_pictograms.add(picto)
@@ -826,7 +826,7 @@ elif st.session_state.page_active == "Compute":
                 if not set_pictograms : 
                     st.success("Your reaction does not have any tox.") # If set is empty we return a no toxcicity message
                 
-                st.error("This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
+                st.warning("⚠️ This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
 
                 GHS_pictograms :dict ={"Exploding bomb" : "GHS_Exploding_bomb.png",
                                     "Flame" : "GHS_Flame.png",
