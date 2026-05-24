@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "EcoChem"
+name = "ecochem"
 version = "0.1.0"
 authors = [{name = "Sami Meghezzi", email = "sami.meghezzy@epfl.ch"}, {name= "Tim Tellier", email = "tim.tellier@epfl.ch"}, {name = "Julien Tchaplyguine", email = "julien.tchaplyguine@epfl.ch"}, {name = "Claudia Vittorangeli", email = "claudia.vittorangeli@epfl.ch"}]
 description = "A Python tool to compute Green Chemistry factors of a reaction."
@@ -65,4 +65,4 @@ packages = ["src/ecochem"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
+pythonpath = ["src"]
