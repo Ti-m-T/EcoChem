@@ -505,10 +505,11 @@ elif st.session_state.page_active == "Reaction Builder":
 
     for i, item in enumerate(st.session_state.prod_list):
         pid = item["id"]
-        with st.expander(f"Product {i+1}", expanded=True):
+        label = "Main Product" if i == 0 else f"Byproduct {i}"
+        with st.expander(label, expanded=True):
 
             typed = st.text_input(
-                f"SMILES for Product {i+1}",
+                f"SMILES for {label}",
                 key=f"typed_prod_{pid}",
                 value=item["smiles"],
             )
@@ -520,7 +521,7 @@ elif st.session_state.page_active == "Reaction Builder":
                 item["smiles"] = drawn.strip()
 
             if item["smiles"]:
-                st.success(f"Product {i+1} added: `{item['smiles']}`")
+                st.success(f"{label} added: `{item['smiles']}`")
 
             if st.button("❌ Remove", key=f"remove_prod_{pid}"):
                 st.session_state.prod_list.pop(i)
