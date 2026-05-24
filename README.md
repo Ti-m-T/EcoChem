@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="https://github.com/Ti-m-T/Green_chem_project/blob/dev/EcoChem.jpg" alt="EcoChem Logo" width="500">
+  <img src="https://github.com/Ti-m-T/EcoChem/blob/main/EcoChem_loc.jpg" alt="EcoChem Logo" width="500">
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/coverage-76%25-green" alt="Coverage">&nbsp;
@@ -11,7 +11,7 @@
 EcoChem is a tool useful to calculate how green a reaction is by computing the atom economy, PMI and E-factor of the given reaction. It is a python based package that uses RDKIT, Streamlit, numpy and pandas.
 
 ---
-## *📄About the package*
+## 📄*About the package*
 With EcoChem it is possible to study how environmentally friendly a reaction is. It all starts by defining a reaction in terms of reagents, products, solvent/catalysts and extractants. Firstly, the SMILES of the participants are obtained: the reagents, solvent/catalyst and products are drawn while the SMILES of the extractants are directly searched on PubChem by typing the name of the compound. 
 
 Once the SMILES are obtained the reaction is equilibrated and can be visualized. 
@@ -23,7 +23,7 @@ Because a reaction should be eco-friendly but also health-friendly, the toxicity
 EcoChem is a package perfect for a first-hand chemist as well as an experienced chemist, as it permits to be more self-aware of what we do in the lab.
 
 ---
-## *💻Installation and set-up*
+## 💻*Installation and set-up*
 The package can be installed in different ways.
 Install the package by running on the terminal
 ```bash
@@ -31,11 +31,11 @@ pip install ecochem
 ```
 Install the package by using the URL of the GitHub repository of the project by running on the terminal
 ```bash
-pip install git+https://github.com/Ti-m-T/Green_chem_project
+pip install git+https://github.com/Ti-m-T/EcoChem
 ```
 You can also copy the repository and install the project in editable mode by following the following steps
 ```bash
-git clone https://github.com/Ti-m-T/Green_chem_project
+git clone https://github.com/Ti-m-T/EcoChem
 cd EcoChem
 pip install -e .
 ```
@@ -44,7 +44,7 @@ Create a separate environement to use the package to prevent bugs
 conda create -n environement_name python=3.10
 conda activate
 ```
-## *📦Required packages*
+## 📦*Required packages*
 EcoChem uses the following packages, make sure to have them
 ```bash
 rdkit
@@ -65,7 +65,7 @@ If a package is missing you can install it by running
 ```bash
 pip install nam_of_the_package
 ```
-## *⚡Structure*
+## ⚡*Structure*
 * Draw the reactans, solvent/catalyst and the products and click apply to visualize the smiles 
 * Add extractants by writing the IUPAC name or directly the smiles and select the volume used
 * Equilibrate the reaction and visualize it
