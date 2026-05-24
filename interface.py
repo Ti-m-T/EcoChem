@@ -292,6 +292,9 @@ if st.sidebar.button("⚛️ Reaction Builder"):
 if st.sidebar.button("🧪 Compute"):
     go_to("Compute")
 
+if st.sidebar.button("💀 Species toxicity"):
+    go_to("💀 Species toxicity")
+
 if st.session_state.page_active == "Home":
     st.title("🍃 EcoChem: Green Chemistry Calculator")
     st.markdown("""
@@ -408,6 +411,7 @@ elif st.session_state.page_active == "Reaction Builder":
                                 min_value=0.0, 
                                 step=0.1, 
                                 key=f"input_density_{i}"
+                
     )
             else:
                 mass = st.number_input(
@@ -670,7 +674,7 @@ elif st.session_state.page_active == "Compute":
     else:
         yield_fraction = yield_input / 100
         st.success(f"Reaction yield set to {yield_input:.2f}%.")
-
+    st.markdown("---")  
     if st.button("⚗️ Compute reaction stoichiometry and Green Metrics"):
 
         if len(st.session_state.get("reag_list", [])) == 0:
@@ -722,6 +726,27 @@ elif st.session_state.page_active == "Compute":
 
             st.warning(f"⚠️ Atom {text_diff_atom} appear only in the reactants or only in the products. Please check your input.") # Checks for the same atoms in reactants and products.
             st.stop()
+
+        for chem in experiment.solvents :
+            vol_chem = chem.volume
+            dens_chem = chem.density
+            index = experiment.solvents.index(chem)
+
+            if vol_chem == 0.0 : 
+                st.error(f"Solvent {index+1} has no volume assigned")
+                st.stop()
+
+            if dens_chem == 0.0 : 
+                st.error(f"Solvent {index+1} has no density assigned")
+                st.stop()
+        
+        for chem in experiment.Catalysts : 
+            mass_chem = chem.mass
+            st.write(chem)
+            if mass_chem == 0.0 :
+                
+                st.error(f"Catalyst {index+1} has no mass assigned")
+                st.stop()
 
         if (
             len(experiment.reactants) > 0
@@ -805,7 +830,9 @@ elif st.session_state.page_active == "Compute":
                 elif ae_result < 40 and ef_result >= 50 and pmi_result > 70:
                     show_skulls()
 
-                st.subheader("Risk Assessment")
+                st.markdown("---")
+
+                st.subheader("💀 Risk Assessment")
 
                 set_CID : set = set()
 
@@ -851,10 +878,58 @@ elif st.session_state.page_active == "Compute":
 
                             if img_path:
                                 col.image(img_path, width=100)
-                                
-                            else:
-                                col.write(picto)
+                #st.info("👈 Use the sidebar and go in the **toxicology** menu to get more information about the toxicity of specific species.")
 
+                st.markdown("---")
+                st.subheader("💀 Toxicity of specific species")
+
+
+                for chem in experiment.reactants :
+                    chem.get_CID()
+                    list_GHS : list[str] = []
+                    text_GHS : str = ""
+                    
+                    if chem.CID == None : 
+                        st.warning (f"No data was found for {chem.smiles}.")
+                    else : 
+                        chem.get_GHS()
+                        chem.get_pictograms()
+                        for key,value in chem.GHS.items() :
+                            list_GHS.append(key)
+                        text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+                        st.warning(
+                                    f"⚠️ [{chem.smiles}] is associated with the following hazards: "
+                                    f"{text_GHS}. See the GHS pictograms below."
+                                    )
+                        list_picto : list[str] = chem.pictograms
+
+                        GHS_pictograms :dict ={"Exploding bomb" : "GHS_Exploding_bomb.png",
+                                    "Flame" : "GHS_Flame.png",
+                                    "Oxidizer (flame over circle)" : "GHS_Oxidizer.png",
+                                    "Gas cylinder" : "GHS_Gas_cylinder.png",
+                                    "Corrosion" : "GHS_Corrosion.png",
+                                    "Skull and crossbones" : "GHS_Skull.png",
+                                    "Exclamation mark" : "GHS_Exclamation_mark.png",
+                                    "Health hazard" : "GHS_Health_hazard.png",
+                                    "Environment" : "GHS_Environment.png"}
+
+                        for i in range(0, len(list_picto), 3):
+                            row = list_picto[i:i+3]
+                            cols = st.columns(3)
+
+                            for col, picto in zip(cols, row):
+                                img_path = GHS_pictograms.get(picto)
+
+                                if img_path:
+                                    col.image(img_path, width=100)
+                    
+
+                
 
             except Exception as e:
                 st.error(f"Error during computation details: {e}")
+
+elif st.session_state.page_active == "💀 Species toxicity":
+    st.title("💀 Species toxicity")
+
+    
