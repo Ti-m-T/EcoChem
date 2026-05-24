@@ -349,7 +349,7 @@ elif st.session_state.page_active == "Reaction Builder":
                 smiles = st.session_state.get(f"saved_reag_{i}", None)
 
             if smiles:
-                st.session_state[f"saved_reag_{i}"] = smiles
+                st.session_state[f"saved_reag_{i}"]=smiles
                 st.success(f"**SMILES Reagent {i+1}:** `{smiles}`")
                 reag_list.append(smiles)
             else:
