@@ -358,7 +358,6 @@ class Reaction:
         #self.stoich_of_reaction()
         total_mass_extractant : float = 0.0
         
-
         for extractant in self.extractants:
 
             total_mass_extractant += extractant.m_liquid

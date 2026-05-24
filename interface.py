@@ -346,9 +346,10 @@ elif st.session_state.page_active == "Reaction Builder":
             elif drawn and drawn.strip():
                 smiles = drawn.strip()
             else:
-                smiles = None
+                smiles = st.session_state.get(f"saved_reag_{i}", None)
 
             if smiles:
+                st.session_state[f"saved_reag_{i}"] = smiles
                 st.success(f"**SMILES Reagent {i+1}:** `{smiles}`")
                 reag_list.append(smiles)
             else:
@@ -421,9 +422,10 @@ elif st.session_state.page_active == "Reaction Builder":
             elif drawn and drawn.strip():
                 smiles = drawn.strip()
             else:
-                smiles = None
+                smiles = st.session_state.get(f"saved_solv_{i}", None)
 
             if smiles:
+                st.session_state[f"saved_solv_{i}"]=smiles
                 st.success(f"**SMILES {role} {i+1}:** `{smiles}`")
                 if role == "Solvent":
                     solv_list.append((smiles, vol,extr_density))
@@ -471,9 +473,10 @@ elif st.session_state.page_active == "Reaction Builder":
             elif drawn and drawn.strip():
                 smiles = drawn.strip()
             else:
-                smiles = None
+                smiles=st.session_state.get(f"saved_prod_{i}", None)
 
             if smiles:
+                st.session_state[f"saved_prod_{i}"]=smiles
                 st.success(f"**SMILES {prod_labels[i]}:** `{smiles}`")
                 prod_list.append(smiles)
             else:
@@ -806,7 +809,7 @@ elif st.session_state.page_active == "Compute":
 
                 set_CID : set = set()
 
-                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]: 
+                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product] + experiment.Catalysts + experiment.solvents + experiment.extractants: 
                     chem.get_CID()
                     set_CID.add(chem.CID)
                 
@@ -815,7 +818,7 @@ elif st.session_state.page_active == "Compute":
                 
                 set_pictograms : set = set()
 
-                for chem in experiment.reactants + experiment.byproducts +[experiment.wanted_product] :
+                for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product] + experiment.Catalysts + experiment.solvents + experiment.extractants: 
                     chem.get_pictograms()
                     for picto in chem.pictograms :
                         set_pictograms.add(picto)
@@ -823,7 +826,7 @@ elif st.session_state.page_active == "Compute":
                 if not set_pictograms : 
                     st.success("Your reaction does not have any tox.") # If set is empty we return a no toxcicity message
                 
-                st.error("This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
+                st.warning("⚠️ This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
 
                 GHS_pictograms :dict ={"Exploding bomb" : "GHS_Exploding_bomb.png",
                                     "Flame" : "GHS_Flame.png",
