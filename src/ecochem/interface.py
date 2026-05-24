@@ -386,9 +386,10 @@ if st.session_state.page_active == "Home":
 # -----------------------------
 elif st.session_state.page_active == "Reaction Builder":
 
+    st.title("⚛️ Reaction Builder")
+
     st.warning("⚠️ Warning, for large molecules with multiple charge please use the smiles input.")
 
-    st.title("⚛️ Reaction Builder")
 
     # -----------------------------
     # Reagents Section
@@ -798,7 +799,7 @@ elif st.session_state.page_active == "Compute":
             if ae_result >= 90:
                 st.success("Excellent! This reaction is very atom‑efficient.")
             elif ae_result >= 60:
-                st.info(
+                st.warning(
                     "Good atom economy — there is some waste, but overall acceptable."
                 )
             elif ae_result >= 40:
@@ -928,7 +929,7 @@ elif st.session_state.page_active == "Compute":
                 if experiment.extractants:
                     render_chemicals("Extractants toxicity", experiment.extractants)
 
-                st.info("The analysis of your reaction is done!")
+                st.success("The analysis of your reaction is done!")
                 st.balloons()
 
         except Exception as e:
