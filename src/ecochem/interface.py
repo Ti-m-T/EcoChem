@@ -1,4 +1,3 @@
-
 import sys
 import os
 import random
@@ -36,13 +35,15 @@ if "page_active" not in st.session_state:
     st.session_state.page_active = "Home"
 
 if "reag_list" not in st.session_state:
-    st.session_state.reag_list = []   # [{"id":..., "smiles":...}]
+    st.session_state.reag_list = []  # [{"id":..., "smiles":...}]
 
 if "prod_list" not in st.session_state:
-    st.session_state.prod_list = []   # [{"id":..., "smiles":...}]
+    st.session_state.prod_list = []  # [{"id":..., "smiles":...}]
 
 if "solvcat_list" not in st.session_state:
-    st.session_state.solvcat_list = []  # [{"id":..., "role":..., "smiles":..., "volume":..., "density":..., "mass":...}]
+    st.session_state.solvcat_list = (
+        []
+    )  # [{"id":..., "role":..., "smiles":..., "volume":..., "density":..., "mass":...}]
 
 if "extr_list" not in st.session_state:
     st.session_state.extr_list = []
@@ -99,8 +100,12 @@ def atom_set_builder(smiles_list: list[str]) -> set:
 # Build Reaction Object
 # -----------------------------
 def build_reaction():
-    reag_smiles = [item["smiles"] for item in st.session_state.reag_list if item["smiles"]]
-    prod_smiles = [item["smiles"] for item in st.session_state.prod_list if item["smiles"]]
+    reag_smiles = [
+        item["smiles"] for item in st.session_state.reag_list if item["smiles"]
+    ]
+    prod_smiles = [
+        item["smiles"] for item in st.session_state.prod_list if item["smiles"]
+    ]
 
     reactants_objects = [Chemical(smiles=s) for s in reag_smiles]
 
@@ -296,6 +301,7 @@ def display_linear_gauge_efactor(value, title="E-Factor"):
     """
     st.markdown(gauge_html, unsafe_allow_html=True)
 
+
 # -----------------------------
 # Toxcicity functions
 # -----------------------------
@@ -320,14 +326,14 @@ def render_chemicals(title, chem_list):
         elif len(list_GHS) == 1:
             text_GHS = f'"{list_GHS[0]}"'
         else:
-            text_GHS = ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+            text_GHS = (
+                ", ".join(f'"{x}"' for x in list_GHS[:-1]) + f' and "{list_GHS[-1]}"'
+            )
 
-        st.warning(
-            f"⚠️ [{chem.smiles}] hazards: {text_GHS}"
-        )
+        st.warning(f"⚠️ [{chem.smiles}] hazards: {text_GHS}")
 
         for i in range(0, len(list_picto), 3):
-            row = list_picto[i:i+3]
+            row = list_picto[i : i + 3]
             cols = st.columns(3)
 
             for col, picto in zip(cols, row):
@@ -369,8 +375,10 @@ if st.session_state.page_active == "Home":
     * **Process Mass Intensity (PMI):** Evaluates the total mass of materials used per gram of product.
     * **E-Factor:** Quantifies the exact waste-to-product ratio of your process.
     """)
-    
-    st.info("👈 Use the sidebar menu to navigate to the **Reaction Builder** and get started!")
+
+    st.info(
+        "👈 Use the sidebar menu to navigate to the **Reaction Builder** and get started!"
+    )
 
 
 # -----------------------------
@@ -403,7 +411,7 @@ elif st.session_state.page_active == "Reaction Builder":
                 item["smiles"] = typed.strip()
             elif drawn and drawn.strip():
                 item["smiles"] = drawn.strip()
-            
+
             if item["smiles"]:
                 st.success(f"Reagent {i+1} added: `{item['smiles']}`")
 
@@ -424,7 +432,7 @@ elif st.session_state.page_active == "Reaction Builder":
         st.session_state.solvcat_list.append(
             {
                 "id": make_id(),
-                "role": "solvent",   # default
+                "role": "solvent",  # default
                 "smiles": "",
                 "volume": 0.0,
                 "density": 0.0,
@@ -480,7 +488,7 @@ elif st.session_state.page_active == "Reaction Builder":
                     value=float(item["mass"]),
                 )
             if item["smiles"]:
-             st.success(f"{role.capitalize()} {i+1} added: `{item['smiles']}`")
+                st.success(f"{role.capitalize()} {i+1} added: `{item['smiles']}`")
             if st.button("❌ Remove", key=f"remove_solvcat_{sid}"):
                 st.session_state.solvcat_list.pop(i)
                 st.rerun()
@@ -510,9 +518,9 @@ elif st.session_state.page_active == "Reaction Builder":
                 item["smiles"] = typed.strip()
             elif drawn and drawn.strip():
                 item["smiles"] = drawn.strip()
-                
+
             if item["smiles"]:
-             st.success(f"Product {i+1} added: `{item['smiles']}`")
+                st.success(f"Product {i+1} added: `{item['smiles']}`")
 
             if st.button("❌ Remove", key=f"remove_prod_{pid}"):
                 st.session_state.prod_list.pop(i)
@@ -525,9 +533,15 @@ elif st.session_state.page_active == "Reaction Builder":
     # -----------------------------
     if st.button("🚀 Generate Reaction SMILES"):
 
-        reag_str = ".".join([item["smiles"] for item in st.session_state.reag_list if item["smiles"]])
-        solv_str = ".".join([item["smiles"] for item in st.session_state.solvcat_list if item["smiles"]])
-        prod_str = ".".join([item["smiles"] for item in st.session_state.prod_list if item["smiles"]])
+        reag_str = ".".join(
+            [item["smiles"] for item in st.session_state.reag_list if item["smiles"]]
+        )
+        solv_str = ".".join(
+            [item["smiles"] for item in st.session_state.solvcat_list if item["smiles"]]
+        )
+        prod_str = ".".join(
+            [item["smiles"] for item in st.session_state.prod_list if item["smiles"]]
+        )
 
         full_reaction = f"{reag_str}>{solv_str}>{prod_str}"
 
@@ -554,14 +568,20 @@ elif st.session_state.page_active == "Reaction Builder":
         experiment = build_reaction()
 
         reactant_set = {r.smiles for r in experiment.reactants}
-        product_set = {p.smiles for p in experiment.byproducts + [experiment.wanted_product]}
+        product_set = {
+            p.smiles for p in experiment.byproducts + [experiment.wanted_product]
+        }
 
         if reactant_set & product_set:
             st.warning("⚠️ A molecule appears as both reactant and product.")
             st.stop()
 
-        atom_reag = atom_set_builder([item["smiles"] for item in st.session_state.reag_list])
-        atom_prod = atom_set_builder([item["smiles"] for item in st.session_state.prod_list])
+        atom_reag = atom_set_builder(
+            [item["smiles"] for item in st.session_state.reag_list]
+        )
+        atom_prod = atom_set_builder(
+            [item["smiles"] for item in st.session_state.prod_list]
+        )
 
         if atom_reag != atom_prod:
             diff = atom_reag ^ atom_prod
@@ -569,22 +589,31 @@ elif st.session_state.page_active == "Reaction Builder":
             st.stop()
 
         try:
-            reag_mols = [Chem.MolFromSmiles(item["smiles"]) for item in st.session_state.reag_list]
-            solv_mols = [Chem.MolFromSmiles(item["smiles"]) for item in st.session_state.solvcat_list]
-            prod_mols = [Chem.MolFromSmiles(item["smiles"]) for item in st.session_state.prod_list]
+            reag_mols = [
+                Chem.MolFromSmiles(item["smiles"])
+                for item in st.session_state.reag_list
+            ]
+            solv_mols = [
+                Chem.MolFromSmiles(item["smiles"])
+                for item in st.session_state.solvcat_list
+            ]
+            prod_mols = [
+                Chem.MolFromSmiles(item["smiles"])
+                for item in st.session_state.prod_list
+            ]
 
             rxn = AllChem.ChemicalReaction()
 
             for m in reag_mols:
-                if m:            
+                if m:
                     rxn.AddReactantTemplate(m)
 
             for m in solv_mols:
-                if m:           
+                if m:
                     rxn.AddAgentTemplate(m)
 
             for m in prod_mols:
-                if m:  
+                if m:
                     rxn.AddProductTemplate(m)
 
             img = Draw.ReactionToImage(rxn, subImgSize=(400, 400), useSVG=False)
@@ -713,14 +742,20 @@ elif st.session_state.page_active == "Compute":
         experiment = build_reaction()
 
         reactant_set = {r.smiles for r in experiment.reactants}
-        product_set = {p.smiles for p in experiment.byproducts + [experiment.wanted_product]}
+        product_set = {
+            p.smiles for p in experiment.byproducts + [experiment.wanted_product]
+        }
 
         if reactant_set & product_set:
             st.warning("A molecule appears as both reactant and product.")
             st.stop()
 
-        atom_reag = atom_set_builder([item["smiles"] for item in st.session_state.reag_list])
-        atom_prod = atom_set_builder([item["smiles"] for item in st.session_state.prod_list])
+        atom_reag = atom_set_builder(
+            [item["smiles"] for item in st.session_state.reag_list]
+        )
+        atom_prod = atom_set_builder(
+            [item["smiles"] for item in st.session_state.prod_list]
+        )
 
         if atom_reag != atom_prod:
             diff = atom_reag ^ atom_prod
@@ -750,9 +785,55 @@ elif st.session_state.page_active == "Compute":
 
             st.subheader("🌿 Green Metrics")
 
+            # -----------------------------
+            # Atom Economy Comments
+            # -----------------------------
             display_linear_gauge(ae_result, "Atom Economy")
+
+            if ae_result >= 90:
+                st.success("Excellent! This reaction is very atom‑efficient.")
+            elif ae_result >= 60:
+                st.info(
+                    "Good atom economy — there is some waste, but overall acceptable."
+                )
+            elif ae_result >= 40:
+                st.warning("Moderate atom economy — significant waste is produced.")
+            else:
+                st.error(
+                    "💀 Very poor atom economy — most atoms do not end up in the product."
+                )
+
+            # -----------------------------
+            # PMI Comments
+            # -----------------------------
             display_linear_gauge_pmi(pmi_result, "PMI")
+
+            if pmi_result <= 10:
+                st.success("Fantastic! Very low material usage.")
+            elif pmi_result <= 25:
+                st.info("Good PMI — material usage is reasonable.")
+            elif pmi_result <= 50:
+                st.warning("Moderate PMI — the process uses a lot of material.")
+            else:
+                st.error(
+                    "💀 Very high PMI — the process is extremely material‑intensive."
+                )
+
+            # -----------------------------
+            # E‑Factor Comments
+            # -----------------------------
             display_linear_gauge_efactor(ef_result, "E-Factor")
+
+            if ef_result <= 5:
+                st.success("Excellent! Very little waste is generated.")
+            elif ef_result <= 20:
+                st.info("Good E‑Factor — waste generation is acceptable.")
+            elif ef_result <= 50:
+                st.warning("High E‑Factor — significant waste is generated.")
+            else:
+                st.error(
+                    "💀 Extremely high E‑Factor — this process produces a lot of waste."
+                )
 
             if ae_result >= 90 and ef_result <= 10 and pmi_result <= 10:
                 st.balloons()
@@ -760,8 +841,15 @@ elif st.session_state.page_active == "Compute":
                 show_skulls()
 
             st.subheader("Risk Assessment")
-            set_CID : set = set()
-            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]+ experiment.Catalysts + experiment.solvents + experiment.extractants:
+            set_CID: set = set()
+            for chem in (
+                experiment.reactants
+                + experiment.byproducts
+                + [experiment.wanted_product]
+                + experiment.Catalysts
+                + experiment.solvents
+                + experiment.extractants
+            ):
                 chem.get_CID()
                 set_CID.add(chem.CID)
 
@@ -774,7 +862,14 @@ elif st.session_state.page_active == "Compute":
             ASSETS_DIR = BASE_DIR / "assets"
             st.write(ASSETS_DIR)
             set_pictograms = set()
-            for chem in experiment.reactants + experiment.byproducts + [experiment.wanted_product]+ experiment.Catalysts + experiment.solvents + experiment.extractants:
+            for chem in (
+                experiment.reactants
+                + experiment.byproducts
+                + [experiment.wanted_product]
+                + experiment.Catalysts
+                + experiment.solvents
+                + experiment.extractants
+            ):
                 chem.get_pictograms()
                 for picto in chem.pictograms:
                     set_pictograms.add(picto)
@@ -782,26 +877,28 @@ elif st.session_state.page_active == "Compute":
             if not set_pictograms:
                 st.success("No hazard pictograms found.")
             else:
-                st.warning("⚠️ This reaction involves hazardous substances. Hazard information is shown below.") # Warning of the reaciton GHS
+                st.warning(
+                    "⚠️ This reaction involves hazardous substances. Hazard information is shown below."
+                )  # Warning of the reaciton GHS
 
                 GHS_pictograms = {
-                    "Exploding bomb": "../../assets/GHS_Exploding_bomb.png",
-                    "Flame": "../../assets/GHS_Flame.png",
-                    "Oxidizer (flame over circle)": "../../assets/GHS_Oxidizer.png",
-                    "Gas cylinder": "../../assets/GHS_Gas_cylinder.png",
-                    "Corrosion": "../../assets/GHS_Corrosion.png",
-                    "Skull and crossbones": "../../assets/GHS_Skull.png",
-                    "Exclamation mark": "../../assets/GHS_Exclamation_mark.png",
-                    "Health hazard": "../../assets/GHS_Health_hazard.png",
-                    "Environment": "../../assets/GHS_Environment.png",
+                    "Exploding bomb": "../assets/GHS_Exploding_bomb.png",
+                    "Flame": "../assets/GHS_Flame.png",
+                    "Oxidizer (flame over circle)": "../assets/GHS_Oxidizer.png",
+                    "Gas cylinder": "../assets/GHS_Gas_cylinder.png",
+                    "Corrosion": "../assets/GHS_Corrosion.png",
+                    "Skull and crossbones": "../assets/GHS_Skull.png",
+                    "Exclamation mark": "../assets/GHS_Exclamation_mark.png",
+                    "Health hazard": "../assets/GHS_Health_hazard.png",
+                    "Environment": "../assets/GHS_Environment.png",
                 }
 
                 pictos = list(set_pictograms)
-                
+
                 for i in range(0, len(pictos), 3):
                     cols = st.columns(3)
 
-                    for col, picto in zip(cols, pictos[i:i+3]):
+                    for col, picto in zip(cols, pictos[i : i + 3]):
                         img_path = GHS_pictograms.get(picto)
 
                         if img_path:
@@ -815,7 +912,10 @@ elif st.session_state.page_active == "Compute":
 
                 render_chemicals("Reactants toxicity", experiment.reactants)
 
-                render_chemicals("Products toxicity", [experiment.wanted_product] + experiment.byproducts)
+                render_chemicals(
+                    "Products toxicity",
+                    [experiment.wanted_product] + experiment.byproducts,
+                )
 
                 if experiment.solvents:
                     render_chemicals("Solvent toxicity", experiment.solvents)
@@ -825,10 +925,9 @@ elif st.session_state.page_active == "Compute":
 
                 if experiment.extractants:
                     render_chemicals("Extractants toxicity", experiment.extractants)
-                
+
                 st.info("The analysis of your reaction is done!")
                 st.balloons()
-            
+
         except Exception as e:
             st.error(f"Error during computation details: {e}")
-
