@@ -52,10 +52,13 @@ pandas
 numpy
 matplotlib
 requests
-os
-re
 plotly
-PIL
+Pillow
+pubchempy
+thermo
+simpy
+streamlit 
+streamlit-ketcher
 ```
 If you are not sure which package you have or not write on your terminal
 ```bash
