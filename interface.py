@@ -265,6 +265,21 @@ def display_linear_gauge_efactor(value, title="E-Factor"):  # Colored bar functi
     """
     st.markdown(gauge_html, unsafe_allow_html=True)
 
+def atom_set_builder(st_list_input :list[Chemical]) -> set:
+
+        atom_set = set()
+
+        list_input = [Chemical(smiles=s) for s in st_list_input]
+
+        for smiles_input in list_input:
+            molecular_formula = smiles_input.mol_f
+            atom = re.findall(r'[A-Z][a-z]?', molecular_formula) # Builds a set of the atoms present in the list of reactants or products.
+            atom_set.update(atom)
+        return atom_set
+
+##############################
+#Interface code 
+##############################
 
 st.sidebar.title("Menu")
 
@@ -277,10 +292,6 @@ if st.sidebar.button("⚛️ Reaction Builder"):
 if st.sidebar.button("🧪 Compute"):
     go_to("Compute")
 
-
-# ==========================================
-# HOME PAGE FIXED HERE
-# ==========================================
 if st.session_state.page_active == "Home":
     st.title("🍃 EcoChem: Green Chemistry Calculator")
     st.markdown("""
@@ -471,6 +482,58 @@ elif st.session_state.page_active == "Reaction Builder":
 
     st.divider()
     if st.button("🚀 Generate Reaction SMILES"):
+
+        if len(st.session_state.get("reag_list", [])) == 0:
+            st.warning("⚠️ Please draw at least one reactant to proceed.") # Checks for reactants
+            st.stop()
+
+        elif len(st.session_state.get("prod_list", [])) == 0:
+            st.warning("⚠️ Please draw at least one product to proceed.") # Checks for products
+            st.stop()
+
+        for reactant in st.session_state.get("reag_list", []):
+            if "." in reactant:
+                index = reactant.index(".")
+                st.warning(f"⚠️ The reactant {index} seems to contain multiple SMILES. Please separate them into different input fields.") # Checks for multiple SMILES in the same input for reactants.
+                st.stop()
+
+        for product in st.session_state.get("prod_list", []):
+            if "." in product:
+                index = product.index(".")
+                st.warning(f"⚠️ The product {index} seems to contain multiple SMILES. Please separate them into different input fields.") # Checks for multiple SMILES in the same input for products.
+                st.stop()
+        
+        yield_fraction = 1
+        experiment = build_reaction()
+        reactant_set : set = {reactant.smiles for reactant in experiment.reactants}
+        
+        all_products_list = experiment.byproducts + [experiment.wanted_product]
+
+        all_products_set : set = {products.smiles for products in all_products_list}
+
+        if reactant_set & all_products_set:
+            st.warning(f"⚠️ {reactant_set & all_products_set} appear both as reactants and products. Please check your input.") # Checks for the same molecule in reactants and products.
+            st.stop()
+
+        atom_set_reactants = atom_set_builder(st.session_state.get("reag_list", []))
+
+        atom_set_products = atom_set_builder(st.session_state.get("prod_list", []))
+
+        if atom_set_reactants != atom_set_products:
+
+            diff_in_atom = atom_set_reactants ^ atom_set_products
+        
+            diff_atom_list :list[str] = []
+
+            for atom in diff_in_atom:
+
+                diff_atom_list.append(atom)
+
+                text_diff_atom = ", ".join(f'"{x}"' for x in diff_atom_list[:-1]) + f' and "{diff_atom_list[-1]}"'
+
+            st.warning(f"⚠️ Atom {text_diff_atom} appear only in the reactants or only in the products. Please check your input.") # Checks for the same atoms in reactants and products.
+            st.stop()
+
         if reag_str and prod_str:
             st.success("### Reaction SMILES Created!")
 
@@ -595,18 +658,55 @@ elif st.session_state.page_active == "Compute":
         st.success(f"Reaction yield set to {yield_input:.2f}%.")
 
     if st.button("⚗️ Compute reaction stoichiometry and Green Metrics"):
+
+        if len(st.session_state.get("reag_list", [])) == 0:
+            st.warning("⚠️ Please draw at least one reactant to proceed.") # Checks for reactants
+            st.stop()
+
+        elif len(st.session_state.get("prod_list", [])) == 0:
+            st.warning("⚠️ Please draw at least one product to proceed.") # Checks for products
+            st.stop()
+
+        for reactant in st.session_state.get("reag_list", []):
+            if "." in reactant:
+                index = reactant.index(".")
+                st.warning(f"⚠️ The reactant {index} seems to contain multiple SMILES. Please separate them into different input fields.") # Checks for multiple SMILES in the same input for reactants.
+                st.stop()
+
+        for product in st.session_state.get("prod_list", []):
+            if "." in product:
+                index = product.index(".")
+                st.warning(f"⚠️ The product {index} seems to contain multiple SMILES. Please separate them into different input fields.") # Checks for multiple SMILES in the same input for products.
+                st.stop()
+
         experiment = build_reaction()
-        reactant_set: set = {reactant.smiles for reactant in experiment.reactants}
+        reactant_set : set = {reactant.smiles for reactant in experiment.reactants}
+        
         all_products_list = experiment.byproducts + [experiment.wanted_product]
-        all_products_set: set = {products.smiles for products in all_products_list}
 
-        are_there_same_molecules = reactant_set & all_products_set
+        all_products_set : set = {products.smiles for products in all_products_list}
 
-        if are_there_same_molecules:
-            st.warning(f"{are_there_same_molecules}")
-            st.warning(
-                "⚠️ Warning: Some molecules appear both as reactants and products. Please check your input."
-            )
+        if reactant_set & all_products_set:
+            st.warning(f"⚠️ {reactant_set & all_products_set} appear both as reactants and products. Please check your input.") # Checks for the same molecule in reactants and products.
+            st.stop()
+
+        atom_set_reactants = atom_set_builder(st.session_state.get("reag_list", []))
+
+        atom_set_products = atom_set_builder(st.session_state.get("prod_list", []))
+
+        if atom_set_reactants != atom_set_products:
+
+            diff_in_atom = atom_set_reactants ^ atom_set_products
+        
+            diff_atom_list :list[str] = []
+
+            for atom in diff_in_atom:
+
+                diff_atom_list.append(atom)
+
+                text_diff_atom = ", ".join(f'"{x}"' for x in diff_atom_list[:-1]) + f' and "{diff_atom_list[-1]}"'
+
+            st.warning(f"⚠️ Atom {text_diff_atom} appear only in the reactants or only in the products. Please check your input.") # Checks for the same atoms in reactants and products.
             st.stop()
 
         if (
